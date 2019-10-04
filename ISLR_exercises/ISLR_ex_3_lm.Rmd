@@ -1,0 +1,320 @@
+# ISLR Chapter 3 Exercises: Linear Regression
+
+Answers checked against: https://blog.princehonest.com/stat-learning/
+```{r}
+# install.packages("ISLR")
+library(ISLR)
+library(tidyverse)
+library(MASS)
+select <- dplyr::select
+setwd("/Users/davecporter/Desktop/MOOCs/ISLR")
+```
+
+3a.
+50 + 20GPA + 0.07IQ + 35G + 0.01GPA.IQ - 10GPA.G
+IQ & GPA fixed at 1: 70.07 + 25.01G
+```{r}
+y <- function(gpa, iq, g) 50 + 20*gpa + 0.07*iq + 35*g + 0.01*gpa*iq - 10*gpa*g
+y(1, 1, 1) # IQ and gender fixed (1=female)
+y(1, 1, 0)
+```
+
+i., ii. False, depends on GPA
+```{r}
+y(5, 100, 1) # high GPA
+y(5, 100, 0)
+plotr <- data_frame(gpa=1:5, f=y(gpa, 100, 1), m=y(gpa, 100, 0)) %>% gather("gender", "income", f, m)
+ggplot(plotr, aes(gpa, income, col = gender)) + geom_line()
+```
+
+iii. True, due to negative interaction term GPA x G
+iv. False
+
+3b.
+```{r}
+y(iq=110, gpa=4, g=1)
+```
+
+3c. False. 0.01 x GPA x IQ p-values determine interaction effect, b4=0.01 is low because IQ takes larger values. ie for same GPA, 1 point increase in IQ increases income by 0.01
+
+
+4a. Would expect training RSS for polynomial to be lower. Polynomial model has higher variation and lower bias. Changing a data point will change the polynomial model to a greater extent due to high variation: it fits error terms better, but is over fitting. 
+
+4b. Taking 'test' to mean unseen data on which to make predictions!: Would expect test RSS to be higher for polynomial due to high variation.
+
+Polynomial model has points with higher leverage. This means these points have a greater influence on fitting the model since polynomial model has higher variance.
+```{r}
+# set.seed(5787)
+train <- data.frame(x=1:100, e=rnorm(100)*100) %>% mutate(y= 100 + 2*x + e)
+# set.seed(467)
+test <- data.frame(x=sample(1:100, 30), e=rnorm(30)*100) %>% mutate(y=100 + 2*x + e)
+
+# fit training model
+lm_train <- lm(y ~ x, train)
+lm_train_poly <- lm(y ~ x + I(x^2) + I(x^3), train)
+
+lm_train$residuals^2 %>% sum() 
+lm_train_poly$residuals^2 %>% sum()
+
+# extend training model to test
+test_pred <- test %>% mutate(y_hat = predict(lm_train, .),
+                             resid_y_hat = y - y_hat,
+                             y_hat_poly = predict(lm_train_poly, .),
+                             resid_y_hat_poly = y - y_hat_poly) 
+test_pred$resid_y_hat^2 %>% sum()
+test_pred$resid_y_hat_poly^2 %>% sum()
+
+ggplot() + geom_point(data=train, aes(x, y), col="blue") + geom_point(data=test, aes(x, y), col="red") +
+  geom_smooth(data=train, aes(x,y), method = "lm", se=FALSE) +
+  geom_smooth(data=train, aes(x,y), method = "lm", se=FALSE, formula = y ~ x + I(x^2) + I(x^3)) 
+
+par(mfrow=c(2,2))
+plot(lm_train)
+plot(lm_train_poly)
+```
+
+4c. RSS for polynomial should be lower since it'll fit error terms better like in 4a.
+4d. same
+
+8a.
+```{r}
+lm_3_8a <- lm(mpg ~ horsepower, data=Auto)
+summary(lm_3_8a)
+predict(lm_3_8a, data_frame(horsepower=98, mpg=NA), interval = "confidence")
+predict(lm_3_8a, data_frame(horsepower=98, mpg=NA), interval = "prediction")
+```
+i. yes p < 0.05
+ii. not great R2 = 0.6
+iii. -ve: more hp means less mpg
+iv. 24.5
+
+8c.
+```{r}
+plot(lm_3_8a)
+```
+plot 1: Increasing variability in the residuals
+plot 2: Residuals arent normally distributed
+
+9a.
+```{r}
+pairs(Auto)
+```
+
+9b.
+```{r}
+cor(Auto %>% select(-name))
+```
+
+9c.
+```{r}
+lm_3_9 <- lm(mpg ~ . - name, data = Auto)
+summary(lm_3_9)
+```
+i. yes: F stat pval < 0.05
+ii. stars indicate relationship between predictor and response
+iii. every year adds 0.75 mpg on average
+
+9d.
+```{r}
+par(mfrow=c(2,2))
+plot(lm_3_9)
+```
+top left plot: non constant variation in rediuals
+top right plot: non normal dist in resids
+
+9e.
+Including the interactions hashed out, disp:hp is the only significant interaction and improves model adj R2
+```{r}
+summary(lm(mpg ~ . -name, data=Auto))
+summary(lm(mpg ~ . -name + 
+             displacement:horsepower,# + 
+             # displacement:weight +
+             # horsepower:weight, 
+           data=Auto))
+```
+
+9f.
+```{r}
+summary(lm(mpg ~ . -name + I(displacement^2) + I(horsepower^2) + I(weight^2), data=Auto))
+```
+
+10a-f
+```{r}
+summary(lm(Sales ~ Price + Urban + US, data = Carseats))
+summary(lm(Sales ~ Price + US, data = Carseats))
+mean(Carseats$Sales)
+```
+
+10g. 95% CI for estimates are approx 2x Std. Error
+10h. High leverage for one point
+```{r}
+plot(lm(Sales ~ Price + US, data = Carseats))
+```
+
+11.
+```{r}
+set.seed(1)
+x=rnorm(100)
+y=2*x+rnorm(100)
+
+summary(lm(y ~ x + 0))
+summary(lm(x ~ y + 0))
+
+summary(lm(y ~ x))
+summary(lm(x ~ y))
+```
+
+12a. coef X on Y = coef Y on X when sum(x^2) = sum(y^2) (observed x and y)
+12b.
+```{r}
+x = rnorm(100)
+y = x^2
+
+lm(x ~ y)
+lm(y ~ x)
+```
+
+12c.
+```{r}
+y = -y
+sum(x^2)
+sum(y^2)
+lm(x ~ y)
+lm(y ~ x)
+plot(x,y)
+```
+
+13a,b.
+```{r}
+set.seed(1)
+x <- rnorm(100)
+eps <- rnorm(100, sd=sqrt(0.25))
+```
+
+13c.
+```{r}
+y <- -1 + 0.5*x + eps
+length(y)
+```
+b0 = -1
+b1 = 0.5
+
+13d-g.
+```{r}
+set.seed(1)
+plot(x, y)
+abline(lm(y~x))
+abline(coef = c(-1, 0.5), col="red")
+lm_3_13c <- lm(y ~ x)
+summary(lm_3_13c)
+summary(lm(y ~ x + I(x^2)))
+```
+e. b0_hat is very close to b0 same for b1
+g. polynomial makes a slightly better fit but p value is too large
+
+13h.
+```{r}
+set.seed(1)
+x <- rnorm(100)
+eps <- rnorm(100, sd=0.05)
+y <- -1 + 0.5*x + eps
+plot(x, y)
+abline(lm(y~x))
+abline(coef = c(-1, 0.5), col="red")
+lm_3_13h <- lm(y ~ x)
+summary(lm_3_13h)
+```
+
+13i.
+```{r}
+set.seed(1)
+x <- rnorm(100)
+eps <- rnorm(100, sd=0.5)
+y <- -1 + 0.5*x + eps
+plot(x, y)
+abline(lm(y~x))
+abline(coef = c(-1, 0.5), col="red")
+lm_3_13i <- lm(y ~ x)
+summary(lm_3_13i)
+```
+
+13j. 
+RSE ~ sd of eps (many sims seem to average at this value)
+holds true for different n, eps mean, eps sd and any multipliers to eps ie 3 * eps
+Why is this the case? RSE=sqrt(RSS/(n-2)) so RSE is related to sd of error terms
+(for n=100, standard error for b0 and b1 = sd of eps / 10. higher n = lower coef sd )
+
+14a.
+```{r}
+set.seed(1)
+x1 = runif(100)
+x2 = 0.5 * x1 + rnorm(100)/10
+y = 2 + 2 * x1 + 0.3 * x2 + rnorm(100)
+```
+Y = 2 + 2X1 + 0.3X2 + e
+
+14b.
+```{r}
+plot(x1, x2)
+```
+
+14c.
+```{r}
+lm_3_14c <- lm(y ~ x1 + x2)
+summary(lm_3_14c)
+```
+Actual coefs: b0=2, b1=2, b2=0.3
+b0 is similar, b1 less so, b2 x3 out
+Can reject H0: b1=0
+Cannot reject H0: b2=0
+
+14d,e.
+```{r}
+summary(lm(y ~ x1))
+summary(lm(y ~ x2))
+```
+Can reject H0: b1=0 for both cases
+
+14f. x2 is rejected in larger model but not in simple model
+
+14g.
+```{r}
+x1a=c(x1, 0.1)
+x2a=c(x2, 0.8)
+ya=c(y,6)
+summary(lm(ya ~ x1a + x2a))
+summary(lm(ya ~ x1a))
+summary(lm(ya ~ x2a))
+```
+
+x1 + x2: x1 now insignif, x2 now signif, higher RSE, higher adj R2
+x1: higher RSE, lower adj R2
+x2: almost same RSE, higher adj R2
+
+Use residuals vs leverage to find high leverage points
+```{r}
+par(mfrow=c(2,2))
+plot(lm(ya ~ x1a + x2a))
+plot(lm(ya ~ x1a))
+plot(lm(ya ~ x2a))
+```
+
+Use STUDENTISED RESIDUALS to find outliers (tis different from standardised residuals!). outlier > abs(3)
+```{r}
+plot(predict(lm_3_14c), rstudent(lm_3_14c))
+plot(predict(lm(ya ~ x1a)), rstudent(lm(ya ~ x1a)))
+plot(predict(lm(ya ~ x2a)), rstudent(lm(ya ~ x2a)))
+```
+
+additional point: 
+x1 + x2: not outlier, high leverage
+x1: outlier and some leverage
+x2: not outlier, has high leverage
+
+15a.
+```{r}
+Boston_df <- Boston %>% 
+  mutate(chas = as.factor(chas),
+         rad = as.factor(rad))
+str(Boston_df)
+```

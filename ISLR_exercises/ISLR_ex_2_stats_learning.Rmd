@@ -1,0 +1,107 @@
+# ISLR Chapter 2 Exercises: Statistical Learning
+
+Answers checked against: https://blog.princehonest.com/stat-learning/
+```{r}
+# install.packages("ISLR")
+library(ISLR)
+library(tidyverse)
+library(MASS)
+select <- dplyr::select
+setwd("/Users/davecporter/Desktop/MOOCs/ISLR")
+```
+
+1a. flexible > inflexible, high n so fit should be more reliable
+b. inflexible > flexible, low n might lead to high test MSE
+c. flexible > inflexible, flexible methods can follow non-linear fits better
+d. inflexible > flexible, to avoid overfitting
+
+7a.
+```{r}
+c2e7 <- tibble(X1=c(0,2,0,0,-1,1, 0), X2=c(3,0,1,1,0,1, 0), X3=c(0,0,3,2,1,1, 0), 
+                      Y=c("R", "R", "R", "G", "G", "R", "test"))
+dist(c2e7)
+c2e7 <- c2e7 %>% mutate(Euc = 
+                          sqrt((c2e7$X1 - c2e7$X1[7])^2 + (c2e7$X2 - c2e7$X2[7])^2 + (c2e7$X3 - c2e7$X3[7])^2))
+c2e7
+```
+b. when K=1, Y=Green, green is closest to Y (obs 5)
+c. when K=3, Y=Red, 2x reds and 1x green closest to Y
+
+8a,b.
+```{r}
+college <- read.csv("College.csv")
+rownames(college) = college[,1]
+college = college[,-1]
+college
+```
+
+8cii.
+```{r}
+pairs(college[,1:10])
+```
+
+8ciii.
+```{r}
+boxplot(college$Private, college$Outstate)
+```
+
+8civ.
+```{r}
+college <- college %>% mutate(Elite = ifelse(Top10perc > 50, "Yes", "No") %>% as.factor())
+summary(college)
+plot(college$Elite, college$Outstate)
+```
+
+9a.
+```{r}
+auto <- read.csv("Auto.csv") %>% 
+  mutate(horsepower = horsepower %>% as.character() %>% as.numeric(),
+         cylinders = cylinders %>% as.factor(),
+         origin = origin %>% as.factor(),
+         year = year %>% as.factor()) %>% 
+  drop_na()
+
+auto
+```
+
+9b,c
+```{r}
+get_summary <- function(df, column_pos){
+  df %>% 
+    gather("predictor", "value", column_pos) %>% 
+    group_by(predictor) %>%
+    summarise(min = min(value),
+              max = max(value),
+              mean = mean(value),
+              sd = sd(value))
+}
+get_summary(auto, c(1, 3:6))
+```
+
+9d.
+```{r}
+get_summary(auto[c(1:9, 86:nrow(auto)), ], c(1, 3:6))
+```
+
+9e.
+```{r}
+pairs(auto %>% select(-name))
+```
+
+10a,b.
+```{r}
+pairs(Boston)
+```
+
+10g.
+```{r}
+get_summary(Boston, c(1:length(Boston))) %>% 
+  left_join(Boston %>% 
+              filter(medv == min(medv), crim > 50) %>% 
+              gather("predictor", "value"))
+```
+
+10h.
+```{r}
+Boston %>% mutate(rooms = round(rm)) %>% group_by(rooms) %>% summarise(n = n())
+```

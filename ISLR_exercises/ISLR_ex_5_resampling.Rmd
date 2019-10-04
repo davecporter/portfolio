@@ -1,0 +1,228 @@
+## ISLR Chapter 5 Exercises: Resampling Methods
+
+Note: Please ensure `helpers.R` is in the same directory.
+
+Answers checked against: https://blog.princehonest.com/stat-learning/
+```{r}
+library(tidyverse)
+library(ISLR)
+library(boot)
+library(MASS)
+select <- dplyr::select
+source(file.path(getwd(), 'helpers.R'))
+```
+
+5a,b.
+```{r}
+glm_5_5a <- glm(default ~ income + balance, "binomial", Default)
+glm_5_5a
+
+set.seed(5641)
+train_5_5 <- Default %>% sample_frac(0.5)
+valid_5_5 <- anti_join(Default, train_5_5)
+
+glm_5_5b <- glm(default ~ income + balance, "binomial", train_5_5)
+pred_5_5b <- predict(glm_5_5b, valid_5_5, "response")
+
+valid_5_5 <- valid_5_5 %>% mutate(default_pred = ifelse(pred_5_5b < 0.5, "No", "Yes"))
+mean(valid_5_5$default_pred != valid_5_5$default)
+confusion_matrix(valid_5_5$default_pred, valid_5_5$default) # function from `helpers.R`
+```
+
+5c. 
+```{r}
+q5c <- list()
+for(i in 5641:5644){
+  set.seed(i)
+  train_5_5c <- Default %>% sample_frac(0.5)
+  valid_5_5c <- anti_join(Default, train_5_5c)
+  
+  glm_5_5c <- glm(default ~ income + balance, "binomial", train_5_5c)
+  pred_5_5c <- predict(glm_5_5c, valid_5_5c, "response")
+  valid_5_5c <- valid_5_5c %>% mutate(default_pred = ifelse(pred_5_5c < 0.5, "No", "Yes"))
+  q5c[i - 5640] <- mean(valid_5_5c$default_pred != valid_5_5c$default)
+}
+q5c
+```
+
+5d. Slight increase in test error rate when including `student`
+```{r}
+q5d <- list()
+for(i in 5641:5644){
+  set.seed(i)
+  train_5_5d <- Default %>% sample_frac(0.5)
+  valid_5_5d <- anti_join(Default, train_5_5d)
+  
+  glm_5_5d <- glm(default ~ income + balance + student, "binomial", train_5_5d)
+  pred_5_5d <- predict(glm_5_5d, valid_5_5d, "response")
+  valid_5_5d <- valid_5_5d %>% mutate(default_pred = ifelse(pred_5_5d < 0.5, "No", "Yes"))
+  q5d[i - 5640] <- mean(valid_5_5d$default_pred != valid_5_5d$default)
+}
+q5d
+```
+
+6a.
+```{r}
+glm_5_5a_summ <- summary(glm_5_5a)
+glm_5_5a_summ$coefficients
+```
+
+6b.
+```{r}
+boot_fn <- function(df, index=1:nrow(df)){
+  summary(glm(default ~ income + balance, "binomial", df[index,]))$coefficients[,"Estimate"]
+}
+set.seed(5641)
+boot_fn(Default, 1:nrow(Default))
+```
+
+6c,d. Standard errors look very close compared to glm output
+```{r}
+set.seed(5641)
+boot(Default, boot_fn, 100)
+```
+
+```{r}
+# boot function takes all data
+set.seed(5641)
+boot_fn(Default, sample(1:nrow(Default), 5000))
+boot(Default, boot_fn, 100)
+```
+
+7a,b
+```{r}
+glm_5_7a <- glm(Direction ~ Lag1 + Lag2, "binomial", Weekly)
+glm_5_7a
+glm_5_7b <- glm(Direction ~ Lag1 + Lag2, "binomial", Weekly[-1,])
+glm_5_7b
+```
+
+7c. predicted Up when actually Down
+```{r}
+Weekly[1, "Direction"]
+predict(glm_5_7b, Weekly[1,], "response")
+predict.glm(glm_5_7b, Weekly[1,], "response")
+```
+
+7d,e. Predicted error rate is slightly higher than null error rate
+```{r}
+response_5_7d <- c()
+for(i in 1:nrow(Weekly)){
+  glm_5_7d <- glm(Direction ~ Lag1 + Lag2, "binomial", Weekly[-i,])
+  pred_5_7d <- predict(glm_5_7d, Weekly[i,], "response")
+  response_5_7d[i] <- if(pred_5_7d < 0.5) "Down" else "Up"
+}
+error <- ifelse(Weekly$Direction == response_5_7d, 0, 1)
+
+sum(error)
+mean(error)
+```
+
+using the cv.glm function. `$delta` is the LOOCV statistic (eq 5.1), the mean of all MSEs (second number is an adjusted result, see documentation)
+```{r}
+cv.glm(Weekly, glm_5_7a)$delta
+```
+
+null error rate
+```{r}
+sum(Weekly$Direction == "Down")
+mean(Weekly$Direction == "Down")
+```
+
+8a. n=100, p=2, y = x -2*x^2 + error
+```{r}
+set.seed(1)
+x <- rnorm(100)
+y <- x -2*x^2 + rnorm(100)
+```
+
+8b. concave curve, seems to be more variation towards the centre (due to normal distribution)
+```{r}
+plot(x,y)
+```
+
+8ci.
+```{r}
+df_5_8c <- data.frame(x, y)
+
+lm_5_8ci <- glm(y ~ x)
+cv.glm(df_5_8c, lm_5_8ci)$delta
+```
+
+8cii.
+```{r}
+lm_5_8cii <- glm(y ~ poly(x, 2))
+cv.glm(df_5_8c, lm_5_8cii)$delta
+```
+
+8ciii.
+```{r}
+lm_5_8ciii <- glm(y ~ poly(x, 3))
+cv.glm(df_5_8c, lm_5_8ciii)$delta
+```
+
+8civ.
+```{r}
+lm_5_8civ <- glm(y ~ poly(x, 4))
+cv.glm(df_5_8c, lm_5_8civ)$delta
+```
+
+8d. Results are the same despite different seeds because LOOCV doesn't randomly sample from data. Combinations of test sets are always the same.
+```{r}
+funs_5_8 <- function(seed){
+  set.seed(seed)
+  print(paste("randomness test: rnorm(seed) = ", rnorm(1)))
+  for(i in 1:4)
+    print(cv.glm(df_5_8c, glm(y ~ poly(x, i)))$delta)
+}
+funs_5_8(seed=1)
+funs_5_8(seed=2)
+```
+
+8e. 2nd order polynomial has lowest LOOCV error (ie lowest mean of MSEs). This is expected beacuse y is a function of a second order polynomial.
+
+8f. Estimate for 1st and 2nd order polynomials significant but only when degree > 1. LOOCV agrees with this as 1st order polynomial mean MSE is high which agrees with non-significant estimate in 1st order polynomial. 3rd and 4th order polynomials are not significant therefore the LOOCV mean MSEs are slightly higher than for 2nd order polynomial.
+```{r}
+for(i in 1:4) print(summary(lm(y ~ poly(x, i))))
+```
+
+9a,b,c. Bootstrap SE is very close to calculated estimate
+```{r}
+# estimate of population mean
+mu_hat <- mean(Boston$medv)
+mu_hat
+
+# estimate of mu_hat SE
+SE_mu_hat <- sd(Boston$medv) / sqrt(nrow(Boston))
+SE_mu_hat
+
+# estimate of mu_hat SE using bootstrap
+boot_fn_mean <- function(df, index) mean(df$medv[index])
+boot(Boston, boot_fn_mean, 1000)
+```
+
+9d. t.test is same same as using the precise t-stat
+```{r}
+# approx 95% confidence interval
+mu_hat + c(-1,1) * 2*SE_mu_hat
+t.test(Boston$medv)
+
+# using precise t statistic
+mu_hat + c(-1,1) * qt(0.975, nrow(Boston) - 1) * SE_mu_hat
+```
+
+9e,f. median is slightly lower than mean, but SE is similar
+```{r}
+mu_hat_med <- median(Boston$medv)
+
+boot_fn_med <- function(df, index) median(df$medv[index])
+boot(Boston, boot_fn_med, 1000)
+```
+
+9g,h. SE is higher than for mean and median...
+```{r}
+boot_fn_0.1q <- function(vector, index) quantile(vector[index], 0.1)
+boot_fn_0.1q(Boston$medv, index=1:nrow(Boston))
+boot(Boston$medv, boot_fn_0.1q, 1000)
+```
+

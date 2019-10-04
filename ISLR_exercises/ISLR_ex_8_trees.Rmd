@@ -1,0 +1,379 @@
+# ISLR Chapter 8 Exercises: Decision Trees
+
+Answers checked against: https://blog.princehonest.com/stat-learning/
+```{r}
+library(tidyverse)
+library(MASS)
+select <- dplyr::select
+library(randomForest)
+library(ISLR)
+library(tree)
+library(GGally)
+# library(devtools)
+# install_version("tree", version = "1.0-39", repos = "http://cran.us.r-project.org")
+# install.packages("gbm")
+library(gbm)
+library(broom)
+library(class)
+```
+
+2. Boosting using depth-one trees (stumps) is additive because you are using only one variable to fit each tree (there are no interactions between parameters). The residuals of that first fit will result in a second stump fit to a another distinct, single variable. The next tree (b=2) is fit to the previous tree's (b=1) residuals and shrinkage factor (lambda) which is used to fit the next tree (b=3). This is repeated until number of trees (B) is reached and the boosted model is produced. 
+
+3. Low values indicate purity in the mth region, i.e. for a lower value there is proportionally higher observations in a certain class.
+```{r}
+q3_df <- data_frame(p_hat_m1 = seq(0,1,0.01),
+                    p_hat_m2 = 1 - p_hat_m1,
+                    class_error = 1 - pmax(p_hat_m1, 1 - p_hat_m1),
+                      # ifelse(p_hat_m1 < 0.5, p_hat_m1, 1 - p_hat_m1),
+                    gini = p_hat_m1 * (1 - p_hat_m1) + p_hat_m2 * (1 - p_hat_m2),
+                    entropy = -(p_hat_m1 * log(p_hat_m1) + p_hat_m2 * log(p_hat_m2)))
+ggplot(q3_df %>% gather("metric", "value", 3:5), aes(p_hat_m1, value, col=metric)) + geom_line()
+```
+
+5. majority vote: B, average probability: A
+```{r}
+# given if p < 0.5, i is classed as "A", otherwise "B"
+q5_df <- data_frame(p = c(.1, .15, .2, .2, .55, .6, .6, .65, .7, .75),
+                    class = ifelse(p < 0.5, "A", "B"))
+table(q5_df$class)
+mean(q5_df$p)
+```
+
+6.
+  1. Use *recursive binary splitting* aka top down greedy approach to grow a tree: 
+    i. Split the predictor space in two sections (top-down) based on which variable split will yield the lowest RSS (greedy) for each space. RSS = sum for each varaible and space[sum((mean of observations in that space - observation)^2)],
+    ii. Split one of the spaces in two sections which yields the lowest RSS,
+    iii. Continue until there is a minimum number of observations in a predictor space/terminal node, e.g. 5,
+  2. Use *cost complexity pruning* to produce sub-trees according to the non-negative parameter alpha. Alpha is related to the number of terminal nodes in each sub tree. A higher value of alpha corresponds to a higher penalty on the complexity of the tree.
+  3. Use *k-fold cross validation* to choose best value for alpha, hence the sub tree with the best number of terminal nodes.
+**note: steps 1 & 2 are done by `prune.tree()`, step 3 is done by `cv.tree()`, so all steps are achieved with `cv.tree(FUN=prune.tree)`, which is the default**
+
+7.
+(Note: different train/test sets will produce different orders for which is best number of predictors (m))
+```{r}
+train <- sample(1:nrow(Boston), nrow(Boston)/2)
+
+X.train = Boston[train, -14]
+X.test = Boston[-train, -14]
+Y.train = Boston[train, 14]
+Y.test = Boston[-train, 14]
+
+p <- length(Boston) - 1
+p_0.5 <- round(p/2)
+sqrt_p <- round(sqrt(p))
+ntree <- 500
+
+q7_forest <- function(mtry, ntree){
+  q7_forest <- randomForest(X.train, Y.train, xtest = X.test, ytest = Y.test, mtry = mtry, ntree = ntree)
+  q7_forest$test$mse
+}
+
+mse_df <- mapply(q7_forest, c(p, p_0.5, sqrt_p), ntree) %>% as.data.frame() %>% 
+  mutate(tree_n = c(1:ntree)) %>% 
+  rename(p = V1, p_0.5 = V2, sqrt_p = V3) %>% 
+  gather("mtry", "test_mse", contains("p")) 
+
+ggplot(mse_df, aes(tree_n, test_mse, col=mtry)) + geom_line() + 
+  coord_cartesian(ylim = c(min(mse_df$test_mse) - 0.5, min(mse_df$test_mse) * 2))
+```
+
+8a,b.
+```{r}
+set.seed(2)
+q8_train <- sample_frac(Carseats, 0.7)
+q8_test <- setdiff(Carseats, q8_train)
+
+q8_tree <- tree(Sales ~ ., q8_train)
+plot(q8_tree)
+text(q8_tree, pretty=0, cex=0.6, pos=1, offset=0.)
+
+pred <- predict(q8_tree, newdata = q8_test)
+mean((q8_test$Sales - pred)^2) # q8_test MSE
+```
+
+8c. Pruning tree sometimes improves performance. e.g. if seed = 1, largest tree is selected. 
+When seed = 2, best size = 13 from max size = 15, MSE is reduced by small amount 0.05
+```{r}
+set.seed(2)
+q8_cvtree <- data.frame(size = cv.tree(q8_tree)$size, dev = cv.tree(q8_tree)$dev) 
+best_size_df <- q8_cvtree %>%
+  summarise(max_size = max(size),
+            min_dev = min(dev),
+            best_size = q8_cvtree %>% filter(dev == min_dev) %>% pull(size))
+best_size_df
+
+pred_pruned <- predict(prune.tree(q8_tree, best = best_size_df$best_size), newdata = q8_test)
+mean((q8_test$Sales - pred_pruned)^2) # q8_test MSE
+```
+
+8d. Smaller MSE ~2.5, `Price` and `ShelveLoc` are the most important variables.
+```{r}
+q8_bag <- randomForest(Sales ~ ., q8_train, mtry = length(q8_train) - 1, importance = TRUE)
+q8_bag
+importance(q8_bag)
+varImpPlot(q8_bag)
+```
+
+**OBSERVATION: `Urban` leads to a ~2% increase in MSE. Does removing this variable have an effect on overll MSE?** Doesn't look like it. The small % increase probably doesn't have much effect.
+```{r}
+randomForest(Sales ~ . -Urban, q8_train, mtry = ncol(q8_train) - 2, importance = TRUE)
+```
+
+8e. q8_test MSE is ~3, `Price` and `ShelveLoc` are the most important variables.
+```{r}
+q8_forest <- randomForest(Sales ~ ., q8_train, importance = TRUE)
+q8_forest
+importance(q8_forest)
+varImpPlot(q8_forest)
+```
+
+(Note: different train/test sets will produce different orders for which is best number of predictors (m)). Though here it looks like sqrt_p is usually the worst.
+```{r}
+q8_train <- sample_frac(Carseats, 0.7)
+q8_test <- setdiff(Carseats, q8_train)
+
+X_train = q8_train %>% select(-Sales)
+X_test = q8_test %>% select(-Sales)
+Y_train = q8_train %>% pull(Sales)
+Y_test = q8_test %>% pull(Sales)
+
+p <- ncol(X_train)
+p_0.5 <- round(p/2)
+sqrt_p <- round(sqrt(p))
+ntree <- 500
+
+q8_forest <- function(mtry, ntree){
+  q8_forest <- randomForest(X_train, Y_train, xtest = X_test, ytest = Y_test, mtry = mtry, ntree = ntree)
+  q8_forest$test$mse
+}
+
+mse_df <- mapply(q8_forest, c(p, p_0.5, sqrt_p), ntree) %>% as.data.frame() %>% 
+  mutate(tree_n = c(1:ntree)) %>% 
+  rename(p = V1, p_0.5 = V2, sqrt_p = V3) %>% 
+  gather("mtry", "test_mse", contains("p")) 
+
+ggplot(mse_df, aes(tree_n, test_mse, col=mtry)) + geom_line() + 
+  coord_cartesian(ylim = c(min(mse_df$test_mse) - 0.5, min(mse_df$test_mse) * 2))
+```
+
+9a,b,c,d.
+Training error ~0.7
+Terminal nodes ~7
+Example node when seed = 1: 
+  node),  split,            n,   deviance,  yval,  (yprob)
+  4)      LoyalCH < 0.2642  166  122.10     MM     ( 0.12048 0.87952 )
+  Node (or branch) 4 is called if LoyalCH < 0.51
+  Node 4 is called if LoyalCH < 0.26. It has 166 observations on this branch and deviance of 122.1. 
+  The majority class is MM with 12% of observations in class CH.
+  **Note: node numbering includes nodes that don't exist!**
+**CHECK WHAT DEVIANCE MEANS!!!** I think its entropy (8.7), p312, used to evaluate quality of the split
+
+From the plot, LoyalCH has most importance.
+**Note: a terminal node can have the same class on each branch. This means the node is impure**, i.e. there are still some of the alternate class(es) in that node/predictor space, e.g. node 11 is 55% CH and 45% MM.
+```{r}
+str(OJ)
+
+# set.seed(1)
+q9_train <- sample_n(OJ, 800)
+q9_test <- setdiff(OJ, q9_train)
+
+q9_tree <- tree(Purchase ~ ., q9_train)
+q9_tree
+plot(q9_tree)
+text(q9_tree, pretty=0)
+
+summary(q9_tree)
+```
+
+9e.
+```{r}
+q9_pred_df <- data.frame(prob = predict(q9_tree, newdata = q9_test)) %>% 
+  mutate(pred = ifelse(prob.CH > 0.5, "CH", "MM"))
+table(q9_pred_df$pred, q9_test$Purchase)
+mean(q9_pred_df$pred != q9_test$Purchase)
+```
+
+9f.
+```{r}
+# set.seed(1)
+q9_cvtree <- cv.tree(q9_tree)
+
+q9_cvtree_df <- data.frame(size = q9_cvtree$size, dev = q9_cvtree$dev)
+q9_cvtree_df %>% filter(dev == min(dev))
+```
+
+9g,h,i,j,k.
+**USE THIS IN PORTFOLIO: THIS PLOT COMPARES CV MISCLASSIFICATION ERROR RATE $dev TO TEST ERROR RATE**
+**Note: `prune.misclass()` will output misclassification rate but also uses misclassification rate to prune tree**
+Other seeds give: The cross validated misclassification error rate $dev shows a 'u' shaped curve, however test errors start off at a minimum when size is smallest and increases monotonically to largest size (though overall difference is small).
+For seed = 1: 'curve' with the same/similar sizes at lowest test error rate and lowest deviation ($dev)
+*WARNING!!! something funny is going on with the seeds! Numbers that shouldn't change... do! ie size and dev* above.
+
+Takeaway from comparing $dev, training error and test error is:
+$dev doesn't always give the best training or test error, but its useful for pruning the best trees instead of using error rate during pruning.
+```{r}
+# set.seed(1) # is seed actually used here??
+cv_misclass_rate <- data.frame(size = head(q9_cvtree$size, -1)) %>%
+  mutate(tree = map(size, ~prune.tree(q9_tree, best = .)),
+         train_prob = map(tree, ~predict(., newdata = q9_train)),
+         train_pred = map(train_prob, ~ifelse(.x[,1] > 0.5, "CH", "MM")),
+         train_error = map(train_pred, ~mean(.x != q9_train$Purchase)),
+         test_prob = map(tree, ~predict(., newdata = q9_test)),
+         test_pred = map(test_prob, ~ifelse(.x[,1] > 0.5, "CH", "MM")),
+         test_error = map(test_pred, ~mean(.x != q9_test$Purchase))) %>% 
+  unnest(train_error, test_error)
+cv_misclass_rate
+
+# prune.misclass(q9_tree, newdata = q9_test)$dev / nrow(q9_test)
+
+secax <- 4000
+ggplot(cv_misclass_rate %>% gather("type", "error", contains("error"))) + 
+  geom_line(aes(size, error, col = type)) + 
+  geom_point(aes(size, error, col = type)) +
+  geom_line(data=q9_cvtree_df, aes(size, dev/secax)) + 
+  geom_point(data=q9_cvtree_df, aes(size, dev/secax)) +
+  scale_y_continuous(sec.axis = sec_axis(~ . * secax))
+```
+
+10a,b,c,d.
+```{r}
+hitters <- Hitters %>% filter(!is.na(Salary)) %>% mutate(Salary = log(Salary)) 
+q10_train <- hitters[1:200,]
+q10_test <- hitters[-(1:200),]
+# q10_train <- sample_n(hitters, 200)
+# q10_test <- setdiff(hitters, q10_train)
+
+# set.seed(1) # from answers. what does this influence?
+q10_boost_df <- data.frame(shrinkage = 10^seq(-10, -0.2, 0.1)) %>% 
+  mutate(boost = map(shrinkage, ~gbm(Salary ~ ., data = q10_train, n.trees = 1000, shrinkage = .,
+                                     distribution = "gaussian")),
+         train_pred = map(boost, ~predict(., newdata = q10_train, n.trees = 1000)),
+         train_mse = map(train_pred, ~mean((q10_train$Salary - .)^2)),
+         test_pred = map(boost, ~predict(., newdata = q10_test, n.trees = 1000)),
+         test_mse = map(test_pred, ~mean((q10_test$Salary - .)^2))) %>% 
+  unnest(train_mse, test_mse)
+```
+
+```{r}
+ggplot(q10_boost_df %>% gather("type", "mse", contains("mse")), aes(shrinkage, mse, col=type)) + 
+  geom_line() + geom_point()
+```
+
+10e.
+**DO THIS QUESTION WITH RELEVANT METHOD FROM CHAPTER 6**
+```{r}
+q10_lm_full <- lm(Salary ~ ., q10_train)
+summary(q10_lm_full)
+q10_lm_full_pred <- predict(q10_lm_full, newdata = q10_test)
+mean((q10_test$Salary - q10_lm_full_pred)^2)
+
+# QUICK PICK OF ANY SIGNIFICANT VARIABLE FROM FULL MODEL
+lm_var <- tidy(q10_lm_full) %>% filter(p.value < 0.05, term != "(Intercept)") %>% pull(term)
+q10_lm <- lm(Salary ~ ., q10_train %>% select(lm_var, Salary))
+  
+q10_lm_pred <- predict(q10_lm, newdata = q10_test)
+mean((q10_test$Salary - q10_lm_pred)^2)
+```
+
+10f. `CAtBat` looks the most influential. Others depend on shrinkage, e.g. for lambda = 0.05 which gives good test error, `CRBI` and `CWalks` are also high on the relative influentce list.
+**Note that CAtBat is not considered significant in full lm** Maybe it will become significant after stepwise selection?
+```{r}
+summary(gbm(Salary ~ ., data = q10_train, n.trees = 1000, shrinkage = 0.001, distribution = "gaussian"))
+summary(gbm(Salary ~ ., data = q10_train, n.trees = 1000, shrinkage = 0.01, distribution = "gaussian"))
+summary(gbm(Salary ~ ., data = q10_train, n.trees = 1000, shrinkage = 0.05, distribution = "gaussian"))
+summary(gbm(Salary ~ ., data = q10_train, n.trees = 1000, shrinkage = 0.1, distribution = "gaussian"))
+
+# partial dependence plot (see p331)
+plot(gbm(Salary ~ ., data = q10_train, n.trees = 1000, shrinkage = 0.05, distribution = "gaussian"),
+     i="CAtBat")
+```
+
+10g. test MSEs
+Boosting           ~0.26
+Linear regression  ~0.50
+Bagging            ~0.22
+```{r}
+q10_forest <- randomForest(Salary ~ ., q10_train)
+q10_pred <- predict(q10_forest, newdata = q10_test)
+mean((q10_test$Salary - q10_pred)^2)
+```
+
+11a,b.
+```{r}
+caravan <- Caravan %>% mutate(Purchase = ifelse(Purchase == "Yes", 1, 0))
+q11_train <- caravan[1:1000,]
+q11_test <- caravan[-(1:1000),]
+
+q11_boost <- gbm(Purchase ~ ., data = q11_train, n.trees = 1000, shrinkage = 0.01, distribution = "bernoulli")
+summary(q11_boost)
+```
+
+11c. 22% predicted to make a purchase actually make one (true positive rate, TPR)
+```{r}
+q11_pred <- ifelse(predict(q11_boost, newdata = q11_test, n.trees = 1000, type = "response") > 0.2, 1, 0)
+confmat <- table(q11_test$Purchase, q11_pred)
+confmat
+prop.table(confmat, margin=2)
+```
+
+27% True positive rate with knn k=5
+```{r}
+standardised_X <- scale(Caravan %>% select(-Purchase))
+purchase <- Caravan %>% select(Purchase)
+test <- 1:1000
+train_X <- standardised_X[-test, ] 
+test_X <- standardised_X[test, ] 
+train_y <- purchase[-test, ] 
+test_y <- purchase[test, ]
+
+pred_knn <- knn(train_X, test_X, train_y, k = 5, prob = 0.2)
+confmat_knn <- table(test_y, pred_knn)
+confmat_knn
+prop.table(confmat_knn, margin=2)
+```
+
+14% TPR for logistic regression
+```{r}
+logistic_reg <- glm(Purchase ~ ., "binomial", q11_train)
+pred_logreg <- ifelse(predict(logistic_reg, newdata = q11_test, type = "response") > 0.2, 1, 0)
+
+confmat_logreg <- table(q11_test$Purchase, pred_logreg)
+confmat_logreg
+prop.table(confmat_logreg, margin=2)
+```
+
+
+
+
+
+#### MESSING ABOOT
+```{r}
+library(boot)
+```
+
+```{r}
+library(mlbench)
+data("Sonar")
+data("BreastCancer")
+data("PimaIndiansDiabetes")
+```
+
+```{r, message=FALSE}
+ggpairs(PimaIndiansDiabetes, aes(col=diabetes, alpha=0.2))
+```
+
+```{r, message=FALSE, warning=FALSE}
+Diabetes <- PimaIndiansDiabetes %>% 
+  mutate_at(c("glucose", "pressure", "triceps", "mass"), ~ifelse(. == 0, NA, .))
+
+ggpairs(Diabetes, aes(col=diabetes, alpha=0.2))
+```
+
+```{r}
+glm_diabetes <- glm(diabetes ~ ., "binomial", Diabetes)
+summary(glm_diabetes)
+
+# summary(glm(diabetes ~ . -pressure -triceps -insulin, "binomial", Diabetes))
+```
+
+
