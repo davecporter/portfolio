@@ -1,0 +1,234 @@
+## ISLR Chapter 4 Exercises: Classification
+
+Note: Please ensure `helpers.R` is in the same directory.
+
+Answers checked against: https://blog.princehonest.com/stat-learning/
+```{r}
+library(GGally)
+library(tidyverse)
+library(ISLR)
+library(class)
+library(MASS)
+select <- dplyr::select
+source(file.path(getwd(), 'helpers.R'))
+source(file.path(getwd(), 'classification_model_comparators.R'))
+```
+
+4a. 0.1
+
+4b. between 0.05 and 0.1
+
+4c. between 0.1 and 1
+
+5a. If Bayes decision boundary is linear: LDA should be better on training and test 
+
+5b. ...if non-linear, QDA for train and test
+
+5c. Test prediction accuracy of QDA relative to LDA should improve since with higher sample sizes QDA gives better training accuracy and therefore test accuracy. QDA has lower bias so will perform better than LDA, and with large sample sizes the higher classifier variance isn't so much of a concern.
+
+6a.
+```{r}
+odds <- exp(-6 + 0.05*40 + 1*3.5)
+p_X <- odds / (1 + odds)
+p_X
+```
+
+6b.
+```{r}
+log_odds <- log(0.5 / (1 - 0.5))
+(log_odds + 6 - 1*3.5) / 0.05
+```
+
+7.
+P(Y=yes|X=4) = P(X|Y) * P(Y) / P(X) = pi_yes f_yes(x) / sum(pi_yes f_yes(x), pi_no f_no(x))
+where P(X) follows normal density function f_k(x) where k= yes or no
+```{r}
+x <- 4
+X_mean_yes <- 10
+X_mean_no <- 0
+var <- 36 # for both companies
+pi_yes <- 0.8 # prior probability 
+
+# f_k(x) ie normal density function
+(1 / sqrt(2 * pi * var)) * exp(-(x - X_mean_yes)^2 / (2 * var))
+f_yes_x <- dnorm(x, X_mean_yes, sqrt(var))
+plot(dnorm(1:20, X_mean_yes, sqrt(var)))
+
+pi_yes * f_yes_x / sum(pi_yes * f_yes_x, (1-pi_yes) * dnorm(x, X_mean_no, sqrt(var)))
+```
+
+8. Error rate for KNN training data when K=1 is 0% since 'test' data is same as 'train', i.e. the nearest neighbour for x in test data is the same as for training data.
+
+Therefore KNN test error rate is 36%, choose logistic reg with test error of 30%
+```{r}
+set.seed(78955721)
+df <- data.frame(p1 = c(rnorm(50, mean=0), rnorm(50, mean=1)), 
+                 p2 = c(rnorm(50, mean=0), rnorm(50, mean=1)), 
+                 cl = c(rep("A", 50), rep("B", 50)))
+rand_rows <- sample(1:100, 50, replace = FALSE)
+X_train <- df[rand_rows, -3]
+y_train <- df[rand_rows, 3]
+# NOTE: X_train used for train and test set
+pred_train <- knn(X_train, X_train, y_train, k = 1)
+sum(pred_train != y_train) # therefore mean = 0
+
+X_test <- df[-rand_rows, -3]
+pred_test <- knn(X_train, X_test, y_train, k = 1)
+mean(pred_test != y_train)
+
+ggplot(df, aes(p1, p2, col=cl)) + geom_point()
+```
+
+9a & b.
+```{r}
+0.37 / (1 + 0.37)
+0.16 / (1 - 0.16)
+```
+
+10a.
+```{r}
+str(Weekly)
+```
+- `Today` can only be up or down
+- more ups until c.1998, then more downs except when equal c.2004
+- equal distribution of up/down for lags and volume
+- linear relationship between `Volume` and `Year`, possibly exp or poly
+- more observations have lower volume
+
+```{r, message=FALSE}
+ggpairs(Weekly, aes(col=Direction, alpha=0.2))
+```
+
+```{r}
+ggplot(Weekly, aes(Year, col=Direction)) + geom_density()
+```
+
+10b.
+Only lag2 is statistically significant
+```{r}
+glm_4_10b <- glm(Direction ~ . - Today - Year, data = Weekly, family = "binomial")
+summary(glm_4_10b)
+```
+
+10c.
+In terms of errors:
+44% of predictions are false
+47% false discovery rate, ie 47% of 'Down' predictions are actually 'Up'
+89% false negative rate, ie 89% of actual 'Down' were predicted 'Up'
+8% false positive rate, ie 8% of actual 'Up' were predicted 'Down'
+44% (false omission rate - not good terminology for use here), ie 44% of 'Up' predictions were actually 'Down'
+
+In terms of success: 
+56.1% of predictions are true, though this is only slightly better than predicting all 'Up' which has 55.6% accuracy! This the *null error rate*.
+53% of 'Down' predictions are correct
+11% of actual 'Down' are predicted correctly
+```{r}
+confusion_matrix(glm_4_10b$fitted.values, Weekly$Direction)
+```
+
+10d.
+```{r}
+Weekly_holdout <- Weekly %>% filter(Year >= 2009)
+
+glm_4_10d <- glm(Direction ~ Lag2, data = Weekly, subset = (Year <= 2008), family = "binomial")
+glm_4_10d_pred <- predict(glm_4_10d, newdata = Weekly_holdout)
+confusion_matrix(glm_4_10d_pred, Weekly_holdout$Direction, p_cutoff = 0.5)
+```
+
+10e.
+```{r}
+lda_10e <- lda(Direction ~ Lag2, data = Weekly, subset = (Year <= 2008))
+lda_10e_pred <- predict(lda_10e, newdata = Weekly_holdout)$class
+confusion_matrix(lda_10e_pred, Weekly_holdout$Direction)
+```
+
+10f.
+```{r}
+qda_10f <- qda(Direction ~ Lag2, data = Weekly, subset = (Year <= 2008))
+qda_10f_pred <- predict(qda_10f, newdata = Weekly_holdout)$class
+confusion_matrix(qda_10f_pred, Weekly_holdout$Direction)
+```
+
+10g.
+```{r}
+knn_10g <- knn(train = Weekly %>% filter(Year <= 2008) %>% select(Lag2),
+               test = Weekly %>% filter(Year > 2008) %>% select(Lag2),
+               cl = Weekly %>% filter(Year <= 2008) %>% pull(Direction),
+               k = 1)
+confusion_matrix(knn_10g, Weekly_holdout$Direction)
+```
+
+10h. lda: only one with accuracy better than null error rate
+
+
+11a,b.
+cylinders, displacement, horsepower, weight seem best predictors. However, these have high correlations between each of them.
+Perhaps year and origin also.
+```{r, message=FALSE}
+auto <- Auto %>%
+  mutate(mpg01 = ifelse(mpg < median(mpg), 0, 1) %>% as.factor())
+
+ggpairs(auto %>% select(-name), aes(col = mpg01, alpha=0.2))
+```
+
+Using VIF (variance inflation factor, p101) to look for colinearity
+rule o thumb: over between 5 and 10 = colinearity (1=none)
+```{r}
+# install.packages("car")
+library(car)
+lm_auto <- lm(mpg ~ . -mpg01 -name, data=auto)
+glm_auto <- glm(mpg01 ~ . -mpg -name, auto, family = "binomial")
+vif(lm_auto)
+vif(glm_auto)
+```
+
+11.c-f.
+```{r}
+summary(glm_auto)
+
+auto_preds <- auto %>% select(-name, -mpg)
+
+compare_class_method(auto_preds, "mpg01", n_trials = 100)
+compare_class_method(auto_preds, "mpg01", c("weight", "year"), n_trials = 100)
+```
+
+11g.
+```{r}
+optimise_k(auto_preds, "mpg01", predictors = c("weight", "year"))
+```
+
+13.
+```{r}
+Boston_crim_df <- Boston %>% mutate(chas=as.factor(chas), rad=as.factor(rad),
+                                    crim01 = ifelse(crim > median(crim), "above", "below") %>% as.factor()) %>% 
+  select(-crim)
+```
+
+```{r, message=FALSE}
+ggpairs(Boston_crim_df, aes(col=crim01, alpha=0.2))
+```
+
+```{r}
+compare_class_method(Boston_crim_df, "crim01", methods = c("glm", "lda", "knn"), n_trials = 100, k=5)
+```
+
+model with all predictors, significant or not, seems to be best
+p values of predictors are more related to how large an effect they have on the prediction
+```{r, message=FALSE}
+summary(glm(crim01 ~ ., "binomial", Boston_crim_df))
+compare_class_method(Boston_crim_df, "crim01", methods = c("glm","lda","knn"), n_trials = 100)
+
+summary(glm(crim01 ~ . -chas, "binomial", Boston_crim_df))
+compare_class_method(Boston_crim_df, "crim01", ". -chas", methods = c("glm","lda","knn"), n_trials = 100)
+
+summary(glm(crim01 ~ zn + nox + dis + tax + black + medv, "binomial", Boston_crim_df))
+compare_class_method(Boston_crim_df, "crim01", c("zn","nox","dis","tax","black","medv"), n_trials = 100)
+```
+
+```{r, message=FALSE}
+compare_class_method(Boston_crim_df, "crim01", n_trials = 100, methods = c("glm", "lda", "knn"), k=5)
+compare_class_method(Boston_crim_df %>% select(-rad), "crim01", n_trials = 100,k=5)
+compare_class_method(Boston_crim_df %>% select(-rm), "crim01", n_trials = 100, methods = c("glm", "lda", "knn"), k=5)
+```
+
+*Compare these methods to k-fold CV, LOOCV and bootstrap*
