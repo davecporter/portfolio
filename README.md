@@ -6,8 +6,8 @@ Welcome! Here you will find examples of my data processing, data analysis and ma
 
 File Name |Language |Description  |Exemplifies
 -----     |-----    |-----        |-----
-Effect_of_Game_Theoretical_Margin_on_Game_Success.html |Python |Analysis of online slot games. Consultantcy project for 4theplayer.com. |Data processing including nesting/unnesting, statistical analysis, linear regression, seaborn.
------     |-----    |-----        |-----
+Effect_of_Game_Theoretical_Margin_ on_Game_Success.html |Python |Analysis of online slot games. Consultantcy project for 4theplayer.com. |Data processing including nesting/unnesting, statistical analysis, linear regression, seaborn.
+
 linear_regression |R |Plotting model outputs (e.g. MAE, prediction interval), functions to find linear and non-linear relationships and interaction terms, is it best to model as continuous or ordered categorical? |Linear regression theory, creating complex functions, ggplot.
 
 - Python: Analysis of online casino games (consultantcy project for *4theplayer.com*).
