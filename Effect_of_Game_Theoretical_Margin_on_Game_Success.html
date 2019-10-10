@@ -2,7 +2,7 @@
 <html>
 <head><meta charset="utf-8" />
 
-<title>Effect_of_Game_Theoretical_Margin_on_Game_Success</title>
+<title>Effect_of_Game_Theoretical_Margin_on_Game_Success_MASTER_2019_10_10</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
@@ -13144,7 +13144,7 @@ div#notebook {
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Executive-Summary">Executive Summary<a class="anchor-link" href="#Executive-Summary">&#182;</a></h2><p>The objective of this report is to determine whether theoretical margin can be used to predict how successful an online slot game will be. The theoretical margin is the fraction of wagers placed by the player that will generate revenue and is built in to the game maths.</p>
-<p>At first thought it would seem logical that games with low margins which pay out more to the player may be more popular and vice versa, however no evidence was found in these data to suggest this is the case. Theoretical margin alone cannot be used to predict how much a game is played and therefore how much revenue it will ultimately generate. It can only be used to estimate revenue with associated error margins with how much is wagered as an input.</p>
+<p>At first thought it would seem logical that games with low margins which pay out more to the player may be more popular and vice versa, however no evidence was found in these data to suggest this is the case. Theoretical margin alone cannot be used to predict how much a game is played and therefore how much revenue it will ultimately generate. It can only be used to estimate revenue including error margins once how much the game is played is given.</p>
 <p>What can be concluded is that games which are played less are more likely to show higher variation in their actual margins in which case they are considered unstable. As games are played more, their actual margins tend towards their theoretical margins, i.e. the more a game is played, the more likely it is to generate the revenue it was designed to generate. This makes sense due to the inhernet volatility of gambling games and the law of large numbers. These data suggest that a game will become stable when it averages around 5000 spins per month or has 5000 USD wagered per month.</p>
 <p>Linear regression shows that actual margins do correlate well to theoretical margins. Therefore game revenue can be estimated using:</p>
 <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>Estimated Revenue = Wagers x Theoretical Margin $\pm$ Mean Error</em></p>
@@ -13159,22 +13159,12 @@ div#notebook {
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Contents">Contents<a class="anchor-link" href="#Contents">&#182;</a></h2><p><strong>Load Data and Helper Functions</strong></p>
 <p><strong>1. The Data</strong></p>
-<p>&nbsp; 1.1 Variables Used Analysis</p>
 <p><strong>2. Correlation of Main Variables</strong></p>
 <p><strong>3. Game Stability and Data Cleaning</strong></p>
-<p>&nbsp; 3.1 Are Games Underperforming?</p>
 <p><strong>4. Revenue Estimation</strong></p>
-<p>&nbsp; 4.1 Regression of Revenue vs Wagers</p>
-<p>&nbsp; 4.2 Regression Diagnostics</p>
-<p>&nbsp; 4.3 Prediction Errors</p>
-<p>&nbsp; 4.4 Regresson Conclusion</p>
 <p><strong>5. Game Popularity</strong></p>
 <p><strong>6. Conclusion and Recommendations</strong></p>
 <p><strong>Appendix</strong></p>
-<p>&nbsp; A1. Cleaned Data Correlations</p>
-<p>&nbsp; A2. Number of Observations per Game</p>
-<p>&nbsp; A3. Theoretical Margin Bins</p>
-<p>&nbsp; A4. Game Stability</p>
 
 </div>
 </div>
@@ -13354,6 +13344,13 @@ div#notebook {
 </div>
 </div>
 
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="A-Note-on-Statistical-Inference">A Note on Statistical Inference<a class="anchor-link" href="#A-Note-on-Statistical-Inference">&#182;</a></h2>
+</div>
+</div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
@@ -15599,7 +15596,7 @@ Name: Game ID, dtype: int64</pre>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="A4.-Cleaned-Data-Game-Stability">A4. Cleaned Data Game Stability<a class="anchor-link" href="#A4.-Cleaned-Data-Game-Stability">&#182;</a></h3><p>It has been shown in Section 3 that the less a game is played, the revenue generated is more erratic. This variation cannot be explained by <code>Theoretical Margin</code>. Since game stability measured by <code>Revenue Ratio</code> is a function of <code>Spins per Month</code> it too is unlikely to be effected by <code>Theoretical Margin</code>.</p>
+<h3 id="A4.-Game-Stability">A4. Game Stability<a class="anchor-link" href="#A4.-Game-Stability">&#182;</a></h3><p>It has been shown in Section 3 that the less a game is played, the revenue generated is more erratic. This variation cannot be explained by <code>Theoretical Margin</code>. Since game stability measured by <code>Revenue Ratio</code> is a function of <code>Spins per Month</code> it too is unlikely to be effected by <code>Theoretical Margin</code>.</p>
 <p>Figure 19 shows <code>Revenue Ratio</code> vs <code>Theoretical Margin</code> coloured by <code>Spins per Month</code>. Games with a <code>Theoretical Margin</code> of around 0.03 and 0.065 and above appear to show good stability. Is this stability due to <code>Theoretical Margin</code> though?</p>
 
 </div>
