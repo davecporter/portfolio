@@ -1,8 +1,10 @@
 ## ISLR Chapter 4 Exercises: Classification
 
-Note: Please ensure `helpers.R` is in the same directory.
+Please ensure `classification_model_helpers.R` is in the same directory.
 
 Answers checked against: https://blog.princehonest.com/stat-learning/
+
+Note: this markdown is not intended to be knit.
 ```{r}
 library(GGally)
 library(tidyverse)
@@ -10,8 +12,7 @@ library(ISLR)
 library(class)
 library(MASS)
 select <- dplyr::select
-source(file.path(getwd(), 'helpers.R'))
-source(file.path(getwd(), 'classification_model_comparators.R'))
+source(file.path(getwd(), "classification_model_helpers.R"))
 ```
 
 4a. 0.1

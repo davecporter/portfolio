@@ -1,0 +1,82 @@
+## CLASSIFICATION MODEL COMPARISONS
+
+Accuracies of four classification models are compared for various data sets using cross validation.
+
+Comparator functions are loaded from `classification_model_comparators.R` which also contains their documentation. Make sure this file is in the same directory.
+
+Classification methods comapred are:
+- `glm(family = "binomial")` logistic regression
+- `lda()` linear discriminant analysis
+- `qda()` quadratic discriminant analysis
+- `knn()` k nearest neighbours
+
+Data sets used:
+- ISLR::Auto
+- ISLR::Weekly
+- MASS::Boston
+- mlbench::Sonar
+- mlbench::PimaIndiansDiabetes
+
+```{r}
+library(tidyverse)
+library(MASS)
+library(boot)
+library(ISLR)
+library(mlbench)
+select <- dplyr::select
+source(file.path(getwd(), 'classification_model_helpers.R'))
+```
+
+`auto_preds` includes a new feature: `mpg01` which classifies each car as above median `mpg`, `1` or below `0`. 
+```{r}
+auto_preds <- Auto %>%
+  mutate(mpg01 = ifelse(mpg > median(mpg), 1, 0) %>% as.factor()) %>% 
+  select(-name, -mpg)
+
+Boston_df <- Boston %>% mutate(chas=as.factor(chas), rad=as.factor(rad))
+```
+
+Example comparison of classification methods.
+```{r, message=FALSE}
+k_test <- 5
+compare_class_method(auto_preds, "mpg01", ".", n_trials=100, k=k_test)
+```
+
+```{r, message=FALSE}
+compare_class_method(Weekly, "Direction", "Lag2", n_trials=100, k=k_test)
+```
+
+```{r, message=FALSE}
+compare_class_method(Boston_df, "chas", "indus", n_trials=100, k=k_test)
+```
+
+Comparing my CV approach with leave one out cross validation (LOOCV) and k-fold CV for `Auto` data set regressing `mpg01` on `cylinders` only.
+
+My CV approach is closer to validation set method but instead of 50/50 split I use 70/30 train/test(hold-out) split.
+```{r, message=FALSE}
+compare_class_method(auto_preds, "mpg01", "cylinders", n_trials=100, k=k_test)
+```
+
+```{r}
+# LOOCV accuracy rate
+1 - cv.glm(auto_preds, glm(mpg01 ~ cylinders, "binomial", auto_preds))$delta[1] 
+```
+
+```{r}
+# k-fold CV accuracy rate
+1 - cv.glm(auto_preds, glm(mpg01 ~ cylinders, "binomial", auto_preds), K=10)$delta[1] 
+```
+
+Comparison for `Sonar` and `PimaIndiansDiabetes` data sets.
+```{r}
+data("Sonar")
+data("PimaIndiansDiabetes")
+```
+
+```{r, message=FALSE}
+compare_class_method(PimaIndiansDiabetes, "diabetes", k=5, n_trials = 100)
+compare_class_method(Sonar, "Class",  methods=c("glm", "lda", "knn"), n_trials = 100)
+```
+
+Future considerations:
+- Provide discussion on differences in methods and why some methods work better for a given data set.

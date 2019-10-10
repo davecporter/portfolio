@@ -1,20 +1,22 @@
 # ISLR Chapter 8 Exercises: Decision Trees
 
 Answers checked against: https://blog.princehonest.com/stat-learning/
+
+Note: this markdown is not intended to be knit.
 ```{r}
 library(tidyverse)
 library(MASS)
 select <- dplyr::select
 library(randomForest)
 library(ISLR)
-library(tree)
 library(GGally)
-# library(devtools)
-# install_version("tree", version = "1.0-39", repos = "http://cran.us.r-project.org")
-# install.packages("gbm")
 library(gbm)
 library(broom)
 library(class)
+# I needed to install an earlier version of `tree`
+# library(devtools)
+# install_version("tree", version = "1.0-39", repos = "http://cran.us.r-project.org")
+library(tree)
 ```
 
 2. Boosting using depth-one trees (stumps) is additive because you are using only one variable to fit each tree (there are no interactions between parameters). The residuals of that first fit will result in a second stump fit to a another distinct, single variable. The next tree (b=2) is fit to the previous tree's (b=1) residuals and shrinkage factor (lambda) which is used to fit the next tree (b=3). This is repeated until number of trees (B) is reached and the boosted model is produced. 

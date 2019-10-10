@@ -1,0 +1,347 @@
+## LINEAR REGRESSION
+
+To better understand some aspects of univariate and multivariate linear regression, the following investigations have been undertaken:
+
+**Graphical Representation of Linear Regression and Associated Outputs:** Function to visualise output of simple model with a single predictor variable. Shows the data with regression line, confidence interval for coefficients, mean absolute error, prediction interval and residuals.
+
+**Categorical or Continuous?:** Example of modelling a numerical variable as continuous or ordered categorical.
+
+**Test for Linear and Non-Linear Relationships for Individual Predictors:** Function that fits each predictor in a data frame individually to a common response. The predictor can have a polynomial, square root, log base 10 or natural log transformation. The coefficients, standard error, p value, RSE and R squared of each model can then be compared.
+
+**Finding Interaction Terms:** Function that fits each predictor in a data frame with each other as interaction terms and outputs p values for comparison.
+
+```{r}
+library(tidyverse)
+library(ISLR)
+library(MASS)
+select <- dplyr::select
+```
+
+### Graphical Representation of Linear Regression and Associated Outputs
+
+To get further insight in to output from the linear regression model, these are shown graphically. The function `plot_lm()` models a simple linear regression of a single predictor against a response (entered as strings). 
+
+Two plots are generated. The first shows:
+- Scatterplot of the data coloured by whether the point lies within a prediction interval at a 95% confidence level.
+- Blue solid linear regression line with a grey shaded area showing a point-wise 95% confidence level, i.e. the regression line should lie within this area at a 95% confidence level.
+- Blue dashed line showing the upper and lower bounds of the regression line at a 95% confidence level. It is analagous to the grey shaded area but is calculated from the whole data set using standard errors of the intercept coefficient, b0, and of the regression coefficient, b1. It illustrates the interpretation of the coefficients b0 and b1 and their associated confidence intervals. In the case of b1, it is the average increase in the response, y, between the upper and lower bounds given a unit increase in the predictor, x.
+- Dotted line shows the upper and lower bounds of the fitted values plus or minus the training mean absolute error (MAE). It represents how far on average each observation is from the regression line along the y-axis. Note that in the three examples given below approximately 60-65% of data points lie within this region.
+- Dot-dash line shows the upper and lower bounds of the prediction interval at a 95% confidence level, i.e. approximately 95% of the training data will lie within this region. When prediction intervals are given for predictions made by the model it is saying that based on the training data, there is a 95% probability the prediction will be between these bounds.
+
+The second plot shows:
+- Scatterplot of residuals coloured by whether the residual lies within the MAE.
+- Dotted line shows the MAE.
+
+The fraction of training data within the MAE and prediction interval is also given.
+```{r}
+plot_lm <- function(df, response, predictor, show_summary=TRUE){
+  
+  # fit regression model
+  model <- lm(df[[response]] ~ df[[predictor]])
+  summ <- summary(model)
+  
+  # retrieve coefficients
+  b0 <- summ$coefficients[1,1]
+  b0_se <- summ$coefficients[1,2]
+  b1 <- summ$coefficients[2,1]
+  b1_se <- summ$coefficients[2,2]
+
+  # calculate t statistic for 95% confidence interval on coefficients
+  qt <- qt(.975, nrow(df) - 2)
+
+  # data frame of model outputs and their applicable upper and lower limits 
+  df <- df %>% mutate(fitted = model$fitted.values,
+                      residuals = summ$residuals,
+                      upper_ci = (b0 + qt * b0_se) + (b1 + qt * b1_se) * df[[predictor]],
+                      lower_ci = (b0 - qt * b0_se) + (b1 - qt * b1_se) * df[[predictor]],
+                      upper_mae = fitted + mean(abs(model$residuals)),
+                      lower_mae = fitted - mean(abs(model$residuals)),
+                      in_MAE = df[[response]] < upper_mae & df[[response]] > lower_mae,
+                      upper_pi = predict(model, df[predictor], interval = "predict")[,"upr"],
+                      lower_pi = predict(model, df[predictor], interval = "predict")[,"lwr"],
+                      in_PI95 = df[[response]] < upper_pi & df[[response]] > lower_pi)
+  
+  print(paste("fraction within MAE = ", signif(sum(df$in_MAE) / nrow(df), 2)))
+  print(paste("fraction within 95% prediction interval = ", signif(sum(df$in_PI95) / nrow(df), 2)))
+  
+  # plot dependent variable vs independent variable plus model outputs
+  plot <- ggplot(df, aes(df[[predictor]], df[[response]])) +
+    geom_point(aes(col = in_PI95)) +
+    geom_smooth(method = "lm") +
+    geom_line(aes(df[[predictor]], upper_ci), linetype = 2, col = "blue") + # dashed lines are 95% CI on betas
+    geom_line(aes(df[[predictor]], lower_ci), linetype = 2, col = "blue") +
+    geom_line(aes(df[[predictor]], upper_mae), linetype = 3) + # dotted lines are MAE
+    geom_line(aes(df[[predictor]], lower_mae), linetype = 3) +
+    geom_line(aes(df[[predictor]], upper_pi), linetype = 4) + # dot dash lines are 95% PI (prediction interval)
+    geom_line(aes(df[[predictor]], lower_pi), linetype = 4) +
+    labs(x = colnames(df[predictor]), y = colnames(df[response]))
+  
+  # residual plot
+  res_plot <- ggplot(df, aes(df[[predictor]], residuals)) +
+    geom_point(aes(col = in_MAE)) +
+    geom_hline(aes(yintercept = mean(residuals)), linetype = 2) + # dashed line is mean of residuals
+    geom_hline(aes(yintercept = mean(abs(model$residuals))), linetype = 3) + # dotted lines are MAE
+    geom_hline(aes(yintercept = -mean(abs(model$residuals))), linetype = 3) +
+    labs(x = colnames(df[predictor]))
+  
+  if(show_summary==TRUE){
+    list(plot, res_plot, summ)
+  } else {
+    list(plot, res_plot)
+  }
+}
+```
+
+**Examples:**
+
+These examples only consider one predictor in the intepretation of the model outputs. Other predictors will likely effect the response.
+
+ISLR::Auto, `horsepower` of a car vs its engine size `displacement` in cubic inches.
+```{r}
+plot_lm(Auto, "horsepower", "displacement")
+```
+
+A 300 cubic inch car is predicted to have a 139 horsepower engine on average plus or minus an average error of 12.5 hp. There is a 95% probability it will have a horsepower of between 106 and 173. For an increase in 100 cubic inches, the average horsepower will increase by between 31 and 35. 
+```{r}
+# fit regression model
+auto_model <- lm(horsepower ~ displacement, Auto)
+auto_summ <- summary(auto_model)
+# retrieve coefficients
+b0 <- auto_summ$coefficients[1,1]
+b0_se <- auto_summ$coefficients[1,2]
+b1 <- auto_summ$coefficients[2,1]
+b1_se <- auto_summ$coefficients[2,2]
+# prediction
+b0 + b1 * 300
+```
+
+```{r}
+# MAE
+mean(abs(auto_model$residuals))
+```
+
+```{r}
+# prediction interval
+predict(auto_model, data.frame(displacement=300), interval = "predict")
+```
+
+```{r}
+# calculate t statistic for 95% confidence interval on coefficients
+qt <- qt(.975, nrow(Auto) - 2)
+```
+
+```{r}
+# unit increase in predictor gives increase in response
+b1 - qt * b1_se
+b1 + qt * b1_se
+```
+
+ISLR::Carseats, `Sales` of child car seats at a store vs the local advertising budget at that store (both in thousands of dollars).
+```{r}
+plot_lm(Carseats, "Sales", "Advertising")
+# Carseats %>% filter(Advertising == 0) %>% summarise(mean(Sales))
+```
+
+MASS::Boston, average number of rooms per dwelling `rm` in an area of Boston vs median value of owner-occupied homes `medv` (in thousands of dollars) for that area.
+```{r}
+plot_lm(Boston, "rm", "medv")
+```
+
+### Categorical or Continuous?
+
+Are some variables better off being considered as continuous or categorical? In the `Auto` data set `cylinders` could be considered as ordered categorical variables as it is not possible to have fractions of a cylinder.
+
+In this example they seem better off as factors as the RSE is lower and R squared is higher. 
+```{r}
+# linear model with cylinders as continuous
+summary(lm(mpg ~ cylinders, Auto))
+
+# linear model with cylinders as factors
+Auto_df <- Auto %>% select(-name) %>% mutate(fact_cyl = as.factor(cylinders))
+lm_fact_cyl <- summary(lm(mpg~fact_cyl, Auto_df))
+lm_fact_cyl
+```
+
+The chart below shows why converting `cylinders` to ordered categorical performs better. The blue line is the regression using numerical continuous values and the red line shows regression using ordered categorical. It can be seen that the red line is able to better capture the mean `mpg` for each number of `cylinders`.
+```{r}
+# create data frame of regression coefficients
+plotr <- lm_fact_cyl$coefficients %>% 
+  as.data.frame() %>% rownames_to_column("fact_cyl") 
+# convert factors back to numerical for plotting purposes
+plotr <- plotr %>% 
+  mutate(cylinders = ifelse(fact_cyl == "(Intercept)", 3, str_replace_all(fact_cyl, "\\D", "")) %>% as.numeric(),
+         mpg_fact_cyl = ifelse(cylinders == 3, plotr[1,2], plotr[1,2] + Estimate))
+
+ggplot(Auto_df, aes(cylinders, mpg)) + geom_point() + geom_smooth(method = "lm") +
+  geom_line(data = plotr, aes(cylinders, mpg_fact_cyl), col = "red")
+```
+
+### Test for Linear and Non-Linear Relationships for Individual Predictors
+
+To test for linear and non-linear relationships between each individual predictor against a response, the function `test_relationship()` is used. For every predictor it fits a simple linear model to the response and can apply a transformation to the predictor.
+
+The output is a data frame containing regression coefficient estimate, standard error, p value, RSE, R squared and boolean of significance for each predictor.
+
+Arguments:
+df              data frame for analysis
+response        string of response variable
+n_poly          numerical polynomial order, defaults to 1, univariate regression
+sqrt            boolean for square root transformation of the predictor, defaults to false
+log             "10" for base 10 and "natural" for log transformation of the predictor, defaults to false
+signif_level    significance level to assess coefficients, defaults to 0.05
+show_intercept  boolean to show output for the intercept
+```{r}
+test_relationship <- function(df, response, n_poly=1, sqrt=FALSE, log=FALSE, 
+                              signif_level=0.05, show_intercept=TRUE){
+  
+  # remove categorical variables if fitting polynomials, square root or logs
+  if(n_poly > 1 | sqrt == TRUE | log != FALSE) df <- df %>% select_if(is.numeric) 
+  predictors <- colnames(df)[colnames(df) != response] # remove response to create predictor names vector
+  
+  # fit linear model
+  fit_lm <- function(response, x, n_poly){
+    if(sqrt == TRUE) {formula <- as.formula("df[[response]] ~ sqrt(df[[x]])")
+    } else if(log == "10") {formula <- as.formula("df[[response]] ~ log10(df[[x]])")
+    } else if(log == "natural") {formula <- as.formula("df[[response]] ~ log(df[[x]])")
+    } else {
+      formula <- data.frame(poly = seq(1, n_poly)) %>%
+        mutate(term = case_when(poly == 1 ~ "df[[x]]",
+                                poly > 1  ~ paste("I(df[[x]]^", as.character(poly), ")"))) %>%
+        pull(term) %>% paste(., collapse=" + ") %>% paste("df[[response]] ~", .) %>%
+        as.formula()
+    }
+    summary(lm(formula))
+  }
+
+  # model output as nested tables
+  lm_output <- mapply(fit_lm, response, predictors, n_poly)
+  colnames(lm_output) <- predictors
+  model_output <- t(lm_output) %>% as.data.frame() %>% rownames_to_column("predictor")
+
+  # extract coefficients
+  coefs <- model_output %>%
+    mutate(coefficients = map(coefficients, ~as.data.frame(.x)),
+           coef = map(coefficients, ~.x %>% as.data.frame() %>% rownames())) %>% # levels for factors
+    unnest(coef, coefficients) %>%
+    rename(t_value = "t value", pval = "Pr(>|t|)")
+
+  # extract single entry model stats
+  model_stats <- model_output %>%
+    unnest(rse = sigma, r.squared, .drop = TRUE)
+
+  # combine coefficients and model stats
+  output <- left_join(coefs, model_stats, by = "predictor") %>% select(-t_value) %>%
+    mutate(signif = pval < signif_level)
+  
+  # show intercept or not
+  if(show_intercept==FALSE) output %>% filter(coef != "(Intercept)") else output
+}
+```
+
+Exercise 15 from chapter 3 of *Introduction to Statistical Learning with Applications in R* (ISLR) illustrates the use of `test_relationship()`. This involves prediction of per capita crime rate `crim` using the `Boston` data set.
+```{r}
+Boston_df <- Boston %>% 
+  mutate(chas = as.factor(chas),
+         rad = as.factor(rad))
+```
+
+Fit simple linear models for each predictor. 
+```{r}
+single_pred <- test_relationship(Boston_df, "crim", show_intercept = FALSE)
+single_pred
+```
+
+These predictors are statistically significant (i.e. all except `chas`):
+```{r}
+single_pred %>% filter(signif == TRUE) %>% pull(predictor)
+```
+
+Fitting the full model gives `zn`, `nox`, `dis`, `rad` and `medv` as significant.
+```{r}
+all_pred_summ <- summary(lm(crim ~ ., Boston_df))
+all_pred_summ
+```
+
+Plot the multivariate coefficients against the univariate coefficients. The dashed line shows where the coefficients are equal. Most coefficients are similar, except `nox`.
+```{r}
+# attach category numbers to predictor strings
+uni_pred <- single_pred %>% 
+  mutate(predictor = paste(predictor, str_replace(coef, "df\\[\\[x\\]\\]", ""), sep = "")) %>% 
+  rename(univariate_coefficient = Estimate)
+
+# data frame of multiple regression
+multi_pred <- data.frame(multivariate_coefficient = all_pred_summ$coefficients[, "Estimate"]) %>% 
+  rownames_to_column("predictor")
+
+# join regression results data frames and plot
+coeffs <- left_join(uni_pred, multi_pred)
+ggplot(coeffs, aes(univariate_coefficient, multivariate_coefficient)) + geom_point() + 
+  geom_abline(slope=1, intercept=0, linetype=2) +
+  geom_text(data = coeffs %>% filter(univariate_coefficient > 30), aes(label = predictor), vjust=-1)
+```
+
+Check if there is any third order polynomial relationships. 
+```{r}
+poly_pred <- test_relationship(Boston_df, "crim", n_poly = 3, show_intercept = FALSE)
+poly_pred
+```
+
+The predictors below have significance for all polynomial orders. The R squared values also increase, though only from poor correlations to slightly less poor!
+```{r}
+# find predictors with all 3 polynomial orders being significant
+poly_signif <- poly_pred %>% 
+  group_by(predictor) %>% summarise(sum_signif = sum(signif)) %>% filter(sum_signif == 3) %>% pull(predictor)
+
+# compare r squared for simple models and polynomial models each with single predictors
+inner_join(single_pred, poly_pred, by = c("predictor", "coef"), suffix = c(".single", ".poly")) %>% 
+  select(predictor, matches("signif|r.squared")) %>% filter(predictor %in% poly_signif) 
+```
+
+### Finding Interaction Terms
+
+One potential approach to finding interaction terms is to fit a series of models with two predictors each in the form of y ~ x1 + x2 + x1:x2 for every combination of predictor. 
+
+The function `find_interactions()` does this given a single response (entered as a string) at a set significance level. It outputs two tables with the first giving the p value for the coefficients of the intercept, x1, x2 and x1:x2 for each pair of predictors and the second table translates these p values in to a boolean of statistical significance.
+```{r}
+find_interactions <- function(df, response, signif_level=0.05){
+  vars <- colnames(df)[colnames(df) != response] # remove response variable
+  combos <- expand.grid(vars, vars) %>% filter(Var1 != Var2) # remove same predictors
+  # get all permutations for lm
+  # https://stackoverflow.com/questions/17017374/how-to-expand-grid-with-string-elements-the-half
+  combos <- apply(combos, 1, sort) # sort variables A-Z in their pairs (ie sort across rows)
+  combos <- t(combos) # transpose back to long df
+  combos <- combos[!duplicated(combos),] # use boolean filtering to remove duplicates
+
+  fit_lm <- function(response, x1, x2){
+    summary(lm(df[[response]] ~ df[[x1]] * df[[x2]]))$coefficients[,4]
+  }
+  
+  pvals_df <- mapply(fit_lm, "mpg", combos[,1], combos[,2]) %>% as.data.frame()
+  column_names <- paste(combos[,1], combos[,2], sep = ":")
+  colnames(pvals_df) <- column_names
+  rownames(pvals_df) <- c("int", "x1", "x2", "x1:x2")
+  signif_df <- data.frame(pvals_df < signif_level)
+  colnames(signif_df) <- column_names
+  
+  list(pvals_df, signif_df)
+}
+```
+
+Interactions for the `Auto` dataset. Most pairs of predictors provide statistically significant relationships! 
+```{r}
+find_interactions(Auto %>% select(-name), "mpg")
+```
+
+The hierachical principle states if theres an interaction effect, leave in the main effects even if they aren't statistically significant (i.e. if x1:x2 p value is low enough, include x1 and x2 even if their p values are too high).
+
+However, we can't just look at each y ~ x1 + x2 + x1:x2 for significance using `find_interactions()`. For example, in the Auto dataset cylinders:displacement and displacement:weight are both statistically significant on their own but combined in the same model `lm(formula = mpg ~ cylinders * displacement + displacement * weight, data = Auto)` only displacement:weight is significant.
+
+Comparing the RSE and adjusted R squared for each interaction could yield a better analysis.
+```{r}
+summary(lm(formula = mpg ~ cylinders * displacement + displacement * weight, data = Auto))
+```
+
+### Future Considerations
+
+- Include legend for `plot_lm()`
+- Compare RSE and adjusted R squared for `find_interactions()`

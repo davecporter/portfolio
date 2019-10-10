@@ -1,13 +1,13 @@
 # ISLR Chapter 2 Exercises: Statistical Learning
 
 Answers checked against: https://blog.princehonest.com/stat-learning/
+
+Note: this markdown is not intended to be knit.
 ```{r}
-# install.packages("ISLR")
 library(ISLR)
 library(tidyverse)
 library(MASS)
 select <- dplyr::select
-setwd("/Users/davecporter/Desktop/MOOCs/ISLR")
 ```
 
 1a. flexible > inflexible, high n so fit should be more reliable
@@ -29,32 +29,29 @@ c. when K=3, Y=Red, 2x reds and 1x green closest to Y
 
 8a,b.
 ```{r}
-college <- read.csv("College.csv")
-rownames(college) = college[,1]
-college = college[,-1]
-college
+College
 ```
 
 8cii.
 ```{r}
-pairs(college[,1:10])
+pairs(College[,1:10])
 ```
 
 8ciii.
 ```{r}
-boxplot(college$Private, college$Outstate)
+boxplot(College$Private, College$Outstate)
 ```
 
 8civ.
 ```{r}
-college <- college %>% mutate(Elite = ifelse(Top10perc > 50, "Yes", "No") %>% as.factor())
-summary(college)
-plot(college$Elite, college$Outstate)
+College <- College %>% mutate(Elite = ifelse(Top10perc > 50, "Yes", "No") %>% as.factor())
+summary(College)
+plot(College$Elite, College$Outstate)
 ```
 
 9a.
 ```{r}
-auto <- read.csv("Auto.csv") %>% 
+auto <- Auto %>% 
   mutate(horsepower = horsepower %>% as.character() %>% as.numeric(),
          cylinders = cylinders %>% as.factor(),
          origin = origin %>% as.factor(),
