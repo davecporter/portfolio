@@ -4,43 +4,23 @@ Welcome! Here you will find examples of my data processing, data analysis and ma
 
 ### File Contents
 
-File Name |Language |Description  |Exemplifies
------     |-----    |-----        |-----
+|File Name |Language |Description  |Exemplifies
+|-----     |-----    |-----        |-----
 Effect_of_Game_Theoretical_Margin_ on_Game_Success.html |Python |Analysis of online slot games. Consultantcy project for 4theplayer.com. |Data processing including nesting/unnesting, statistical analysis, linear regression, seaborn.
+*ML theory analysis* linear_regression.Rmd |R |Plotting model outputs (e.g. MAE, prediction interval), functions to find linear and non-linear relationships and interaction terms, is it best to model as continuous or ordered categorical? |Linear regression theory, creating complex functions, ggplot.
+*ML theory analysis* logistic_regression.Rmd |R  |Analysis of the logistic function with probability plots. |Logistic regression theory, creating complex functions, ggplot.
+*ML theory analysis* knn.Rmd |R  |Constructing knn algorithm from scratch, optimising k. |k nearest neighbours theory.
+*ML theory analysis* classification_model_comparisons.Rmd  |R  |Comparing logistic regression, LDA, QDA and knn for various data sets.  |Classification theory.
+*ML theory analysis* classification_model_helpers.R  |R  |Functions to compare accuracy of logistic regression, LDA, QDA and knn, functions to create detailed confusion matrix and optimise knn k.  |Confusion matrix, creating complex functions.
+ISLR_ex\* |R |Exercises from *Introduction to Statistical Learning with Applications in R* (ISLR). |Machine learning theory.
 
-linear_regression |R |Plotting model outputs (e.g. MAE, prediction interval), functions to find linear and non-linear relationships and interaction terms, is it best to model as continuous or ordered categorical? |Linear regression theory, creating complex functions, ggplot.
+### Coding Skill Highlights
 
-- Python: Analysis of online casino games (consultantcy project for *4theplayer.com*).
-- R: Exercises from *Introduction to Statistical Learning with Applications in R*.
-- R: Further investigation of machine learning algorithmn theory: linear regression, logistic regression and K nearest neighbours.
-- R: Predicting survival on Titanic, the infamous dataset.
-- Python: Analysis of FIFA national football team rankings.
-- Python **?and R?**: Who would have won the English Premier League if it were organised as a round-robin tournament?
-  - R: Data analysis and prediction of greenhouse gas emissions. Will various countries meet their Paris Accord targets?
-  - R: Prediction of movie popularity using multiple linear regression.
-
-### Skills  
-
-...packages including...
 R: 
-  - dplyr: including helper functions eg mutate_at, select_if **CHECK THESE!**
-  - ggplot: high quality figures
-- purrr: grouping and nesting of data
-Python: numpy, pandas, scipy, scikit-learn
+- dplyr: including advanced functions eg mutate_at, mutate_if
+- tidyr & purrr: group, nest, map function
+- ggplot: high quality figures
+- complex multipurpose function creation e.g. `test_relationship()` in `linear_regression.Rmd`
 
-
-
-1. Data analysis and prediction of greenhouse gas emissions. Will various countries meet their Paris Accord targets?
-  Skip to Section 4 for the juicy predictions using linear regression and time series modelling.
-
-2. Prediction of movie popularity using multiple linear regression.
-
-
-### Notes
-
-ISLR ex stuff:
-- markdowns not intended to be knitted
-
-ML theory stuff:
-- Functions are designed for the datasets used in this portfolio and haven't been extensively tested for universal use.
-- Chart legends haven't been optimised, main focus is on the theory not spending time tarting these up
+Python: 
+- packages: numpy, pandas, seaborn, scipy, scikit-learn, statsmodels
