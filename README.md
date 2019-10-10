@@ -1,26 +1,14 @@
 ## Dave Porter Data Science Portfolio
 
-Welcome! Here you will find examples of my data wrangling, data analysis and machine learning skills in R and Python.
-
-The aim here is to showcase my skills. Wrangling, analysis and predictive modelling in R covered by my year at RFH.
-
-### Summary
-
-Please click on the links below to access the best examples for each topic:
-  
-  Topic                     |Language |Notes? |Link
------                     |-------- |----- |----
-  Data wrangling            |Python   |      |[Analysis of Online Casino Games](CAIT_GHG.csv)
-Data analysis             |Python   |      |[Analysis of Online Casino Games](CAIT_GHG.csv)
-ML theory                 |R        |Exploration and graphical representations of your favourite algorithms |[Fun With Statistcial Modelling](CAIT_GHG.csv)
-Predictive modelling      |R        |Comparison of different predictive algorithms |[Titanic](CAIT_GHG.csv)
-???R skills???                  |R        |See 'Skills' section  |[Fun With Statistcial Modelling](CAIT_GHG.csv)
-???Python skills???             |Python   |See 'Skills' section  |[Analysis of Online Casino Games](CAIT_GHG.csv)
-
-Other topics?
-  Feature engineering
+Welcome! Here you will find examples of my data processing, data analysis and machine learning skills in R and Python.
 
 ### File Contents
+
+File Name |Language |Description  |Exemplifies
+-----     |-----    |-----        |-----
+Effect_of_Game_Theoretical_Margin_on_Game_Success.html |Python |Analysis of online slot games. Consultantcy project for 4theplayer.com. |Data processing including nesting/unnesting, statistical analysis, linear regression, seaborn.
+-----     |-----    |-----        |-----
+linear_regression |R |Plotting model outputs (e.g. MAE, prediction interval), functions to find linear and non-linear relationships and interaction terms, is it best to model as continuous or ordered categorical? |Linear regression theory, creating complex functions, ggplot.
 
 - Python: Analysis of online casino games (consultantcy project for *4theplayer.com*).
 - R: Exercises from *Introduction to Statistical Learning with Applications in R*.
@@ -46,3 +34,13 @@ Python: numpy, pandas, scipy, scikit-learn
   Skip to Section 4 for the juicy predictions using linear regression and time series modelling.
 
 2. Prediction of movie popularity using multiple linear regression.
+
+
+### Notes
+
+ISLR ex stuff:
+- markdowns not intended to be knitted
+
+ML theory stuff:
+- Functions are designed for the datasets used in this portfolio and haven't been extensively tested for universal use.
+- Chart legends haven't been optimised, main focus is on the theory not spending time tarting these up
