@@ -17,7 +17,7 @@ ISLR_ex_*chapter number and description* |R |Exercises from [*Introduction to St
 ### Coding Skill Highlights
 
 R: 
-- dplyr: including advanced functions eg mutate_at, mutate_if
+- dplyr: including advanced functions e.g. mutate_at, mutate_if
 - tidyr & purrr: group, nest, mutate then map function e.g. apply regression to grouped data and extract metrics and predictions
 - ggplot: high quality figures
 - complex multipurpose function creation e.g. `test_relationship()` in [`linear_regression.Rmd`](linear_regression.Rmd)
