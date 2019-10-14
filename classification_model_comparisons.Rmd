@@ -1,60 +1,56 @@
 ## CLASSIFICATION MODEL COMPARISONS
 
-Accuracies of four classification models are compared for various data sets using cross validation.
-
-Comparator functions are loaded from `classification_model_comparators.R` which also contains their documentation. Make sure this file is in the same directory.
+Accuracies of four classification models are compared for various data sets using cross validation (CV) performed by bespoke functions.
 
 Classification methods comapred are:
-- `glm(family = "binomial")` logistic regression
+- `glm(family = "binomial")` logistic regression and referred to glm for convenience
 - `lda()` linear discriminant analysis
 - `qda()` quadratic discriminant analysis
 - `knn()` k nearest neighbours
 
+My CV approach is that of validation set method but instead of 50/50 split I use 70/30 train/test(hold-out) split by default. Each model is run `n_trials` times with a different overlapping train/test split each time. The mean accuracy and boxplot of each model's accuracy distribution is output.
+
+Comparator functions are loaded from `classification_model_comparators.R` which also contains their documentation. Make sure this file is in the same directory.
+
 Data sets used:
 - ISLR::Auto
 - ISLR::Weekly
-- MASS::Boston
 - mlbench::Sonar
-- mlbench::PimaIndiansDiabetes
+- mlbench::PimaIndiansDiabetes2
 
 ```{r}
 library(tidyverse)
 library(MASS)
+select <- dplyr::select
 library(boot)
 library(ISLR)
 library(mlbench)
-select <- dplyr::select
+library(GGally)
 source(file.path(getwd(), 'classification_model_helpers.R'))
 ```
 
-`auto_preds` includes a new feature: `mpg01` which classifies each car as above median `mpg`, `1` or below `0`. 
+The primary objective here is a brief overview of comparing classification methods, therefore optimising k for knn is not considered and a nominal k = 5 is used for all examples. A method for optimising k can be found in `knn.Rmd`.
+```{r}
+k_test <- 5
+```
+
+**ISLR::Auto**
+
+Based on the `Auto` data set which is an expanded version of `mtcars`, `auto_preds` includes a new feature from `Auto`: `mpg01` which classifies each car as above median `mpg`, `1` or below `0`. 
 ```{r}
 auto_preds <- Auto %>%
   mutate(mpg01 = ifelse(mpg > median(mpg), 1, 0) %>% as.factor()) %>% 
   select(-name, -mpg)
-
-Boston_df <- Boston %>% mutate(chas=as.factor(chas), rad=as.factor(rad))
 ```
 
-Example comparison of classification methods.
+All predictors are used to classify `mpg01` (except `mpg` and `name`). At around `n_trials` of 500, the glm (logistic regression), lda and qda methods display similar accuracy distributions which is to be expected given they classify by probabilities. Knn appears to give a slightly better accuracy.
 ```{r, message=FALSE}
-k_test <- 5
-compare_class_method(auto_preds, "mpg01", ".", n_trials=100, k=k_test)
-```
-
-```{r, message=FALSE}
-compare_class_method(Weekly, "Direction", "Lag2", n_trials=100, k=k_test)
-```
-
-```{r, message=FALSE}
-compare_class_method(Boston_df, "chas", "indus", n_trials=100, k=k_test)
+compare_class_method(auto_preds, "mpg01", ".", n_trials=500, k=k_test)
 ```
 
 Comparing my CV approach with leave one out cross validation (LOOCV) and k-fold CV for `Auto` data set regressing `mpg01` on `cylinders` only.
-
-My CV approach is closer to validation set method but instead of 50/50 split I use 70/30 train/test(hold-out) split.
 ```{r, message=FALSE}
-compare_class_method(auto_preds, "mpg01", "cylinders", n_trials=100, k=k_test)
+compare_class_method(auto_preds, "mpg01", "cylinders", n_trials=200, k=k_test)
 ```
 
 ```{r}
@@ -67,16 +63,66 @@ compare_class_method(auto_preds, "mpg01", "cylinders", n_trials=100, k=k_test)
 1 - cv.glm(auto_preds, glm(mpg01 ~ cylinders, "binomial", auto_preds), K=10)$delta[1] 
 ```
 
-Comparison for `Sonar` and `PimaIndiansDiabetes` data sets.
+**ISLR::Weekly**
+
+The `Weekly` data set consists of: "Weekly percentage returns for the S&P 500 stock index between 1990 and 2010" with `Direction` of `Up` or `Down` indicating whether the market had a positive or negative return on a given week based off the percentage return 2 weeks previous (`Lag2`). 
 ```{r}
-data("Sonar")
-data("PimaIndiansDiabetes")
+compare_class_method(Weekly, "Direction", "Lag2", n_trials=100, k=k_test)
+# null error rate
+Weekly %>% mutate(Up = "Up", Compare = Direction == Up) %>% summarise(n(),mean(Compare))
 ```
 
+glm, lda and qda perform no better than the null error rate since the probability distributions overlap as shown below.
+```{r}
+ggplot(Weekly, aes(Lag2, fill=Direction)) + geom_density(position="dodge", alpha=0.5)
+```
+
+knn performs much better since groups of `Direction` are present as illustrated by the jitter plot below. Test points are more easily classified by their proximity to similar neighbours.
+```{r}
+ggplot(Weekly, aes(x=0, Lag2, col=Direction)) + geom_jitter()
+```
+
+**MASS::Boston**
 ```{r, message=FALSE}
-compare_class_method(PimaIndiansDiabetes, "diabetes", k=5, n_trials = 100)
+# Boston_df <- Boston %>% mutate(chas=as.factor(chas), rad=as.factor(rad))
+# compare_class_method(Boston_df, "chas", "indus", n_trials=100, k=k_test)
+```
+
+**mlbench::Sonar**
+
+`Class` in the `Sonar` data set records whether an object is classified as metal or rock given 60 numerical (0 to 1) sonar readings of different energy bands.
+```{r}
+data("Sonar")
+colnames(Sonar)
+```
+
+knn performs better than glm or lda (some groups are too small for qda). 
+```{r, message=FALSE}
 compare_class_method(Sonar, "Class",  methods=c("glm", "lda", "knn"), n_trials = 100)
 ```
 
+The pairplot below illustrates why knn performs better for 2 predictors chosen as an example. The density plots on the diagonal show the overlap between the predictors, whilst it can be seen on the scatter plot that groups of metal and rocks are distinguishable.
+```{r}
+ggpairs(Sonar, aes(col=Class, alpha=0.5), columns = c("V4", "V37"))
+```
+
+**mlbench::PimaIndiansDiabetes2**
+
+This data set classifies whether a person has `diabetes` using various measures such as `age` and body mass index (bmi) coded as `mass`.
+```{r, message=FALSE}
+data("PimaIndiansDiabetes2")
+compare_class_method(PimaIndiansDiabetes2 %>% na.omit(), "diabetes", k=k_test, n_trials = 200)
+```
+
+On this data set, glm, lda and qda perform slightly better than knn. This is likely due to the influence of `glucose` as shown below which enables a decent prediction. The higher the plasma glucose concentration, the more likely a patient will test `positive`.
+```{r, message=FALSE}
+ggpairs(PimaIndiansDiabetes2 %>% na.omit(), aes(col=diabetes, alpha=0.5))
+```
+
+The summary for the glm (logistic regression) method indeed shows that `glucose` is the most significant predictor.
+```{r}
+summary(glm(diabetes ~ ., family = "binomial", PimaIndiansDiabetes2))
+```
+
 Future considerations:
-- Provide discussion on differences in methods and why some methods work better for a given data set.
+- This is a very brief look at various classification methods. For a start, k number of neighbours in knn could be optimised as well as optimising the probability cut-off for logistic regression, lda and qda using area under the ROC curve. 
