@@ -75,7 +75,6 @@ confusion_matrix <- function(predicted, actual, p_cutoff=0.5, n_digits=2, aka=TR
 
 run_model <- function(df, response, predictors=".", method, tt_split=0.7, k=1, scaled=TRUE, seed=round(runif(1)*1e6)){
   set.seed(seed)
-  # df <- df %>% mutate_("df[[response]]" = as.factor("df[[response]]"))
   train <- df %>% sample_frac(tt_split)
   test <- anti_join(df, train)
   
