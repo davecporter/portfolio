@@ -14354,7 +14354,7 @@ For cut off at 1000 spins per month, fraction games removed = 0.61
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="3.1-Are-Games-Underperforming?">3.1 Are Games Underperforming?<a class="anchor-link" href="#3.1-Are-Games-Underperforming?">&#182;</a></h3><p>It seems that there are more games below the <code>Revenue Ratio</code> = 1 line in Figure 6.1 and 6.2 than there are above. This would suggest that more games generate less revenue than they should. If a threshold of +/- 5% <code>Revenue Ratio</code> is applied to categorise a game as over performing or under performing, then about 40% of games underperform and about 20% over perform.</p>
+<h3 id="3.1-Are-Games-Underperforming?">3.1 Are Games Underperforming?<a class="anchor-link" href="#3.1-Are-Games-Underperforming?">&#182;</a></h3><p>It seems that there are more games below the <code>Revenue Ratio</code> = 1 line in Figure 6.1 and 6.2 than there are above. This would suggest that more games generate less revenue than they should. If a threshold of +/- 5% <code>Revenue Ratio</code> is applied to categorise a game as over performing or under performing, then about 40% of games under perform and about 20% over perform.</p>
 
 </div>
 </div>
@@ -15038,8 +15038,7 @@ Name: Game ID, dtype: int64</pre>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="4.4-Regression-Conclusion">4.4 Regression Conclusion<a class="anchor-link" href="#4.4-Regression-Conclusion">&#182;</a></h3><p>All regression diagnostic tests were satisfied except constant variance of the residuals which is to be expected. Since it is understood that at low values of the predictor <code>Wagers per Month USD</code>, there is higher variance in <code>Actual Margin</code> and therefore higher variance in <code>Revenue per Month USD</code> for similar <code>Theoretical Margin</code>s, these regression models are valid so long as this caveat is taken in to account.</p>
-<p>Put another way, game revenue over any time period can be estimated thus:</p>
+<h3 id="4.4-Regression-Conclusion">4.4 Regression Conclusion<a class="anchor-link" href="#4.4-Regression-Conclusion">&#182;</a></h3><p>All regression diagnostic tests were satisfied except constant variance of the residuals which is to be expected. These regression models are valid so long as this caveat is taken in to account. Regression has shown that <code>Theoretical Margin</code> can be applied directly to the amount wagered on the game over any time period to estimate revenue:</p>
 <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong><em>Estimated Revenue = Predicted Revenue $\pm$ Error</em></strong></p>
 <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong><em>Predicted Revenue = Wagers x <code>Theoretical Margin</code></em></strong></p>
 <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong><em>Error = Predicted Revenue x <code>Mean Absolute % Error</code></em></strong></p>
@@ -15299,7 +15298,7 @@ Name: Game ID, dtype: int64</pre>
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="6.-Conclusion-and-Recommendations">6. Conclusion and Recommendations<a class="anchor-link" href="#6.-Conclusion-and-Recommendations">&#182;</a></h2><p><code>Theoretical Margin</code> does not have an effect on game success. It alone will not determine how much the game is played and how much total revenue will be generated. However, it can be used to estimate revenue within an average error margin if there are estimates of how much the game will be played.</p>
-<p>Games will only produce reliable revenues that match their <code>Theoretical Margin</code> once they are played enough. According to these data, an estimated 5000 <code>Wagers per Month USD</code> on average is needed. With reference to Figure 6.1 in Section 3, this can be translated to a more generic 5000 <code>Spins per Month</code>. Games which are played less could deliver much higher or much less revenue than expected, about $\pm$50% according to these data (Figure 6.2). <code>Theoretical Margin</code> does not effect how stable a game will be.</p>
+<p>Games will only produce reliable revenues that match their <code>Theoretical Margin</code> once they are played enough. According to these data, an estimated 5000 <code>Wagers per Month USD</code> on average is needed. With reference to Figure 6.1 in Section 3, this can be translated to a more generic 5000 <code>Spins per Month</code>. <code>Theoretical Margin</code> does not effect how stable a game will be.</p>
 <p>In order to provide better estimates for revenue given how much a game is played, more games need to be included in the analysis. This would enable regression to be performed on groups of games with better matching <code>Theoretical Margins</code> (e.g. a bin for 0.05 containing 0.045 to 0.055, 0.06 $\pm$0.005 and so on), which would enable more accurate estimates for errors and provide confidence intervals for estimated revenue.</p>
 <p>Game success is more likely dependent on other factors such as the game's maths, how much is spent marketing it and it's position on the website/visibility. Given that game sucess is independent of <code>Theoretical Margin</code> and there is a strong correlation between <code>Theoretical Margin</code> and <code>Actual Margin</code>, games with higher <code>Theoretical Margin</code>s will generate more revenue in the long run.</p>
 <p>Further analysis could include analysing game performance over time and how the positioning of a game on a website effects performance.</p>
@@ -15522,7 +15521,7 @@ Name: Game ID, dtype: int64</pre>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>To try and equalise group size and create more logical groups, bins centered around <code>Theoretical Margin</code>s rounded to 2 decimal places was considered for regression (games between 0.07 and 0.1 have their own group). This had the effect of producing even better correlations, R squared increased from an already good 0.95 to 0.99 and reducing standard error of the coefficients (gradients). However, residuals were not normally distributed, likely a result of small group sizes, so this method was not employed.</p>
+<p>To try and equalise group size and create more logical groups, bins centered around <code>Theoretical Margin</code>s rounded to 2 decimal places is considered for regression (games between 0.07 and 0.1 have their own group). This had the effect of producing even better correlations, R squared increased from an already good 0.95 to 0.99 and reducing standard error of the coefficients (gradients). However, residuals were not normally distributed, likely a result of small group sizes, so this method was not employed.</p>
 
 </div>
 </div>
