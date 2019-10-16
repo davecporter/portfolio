@@ -22,11 +22,11 @@ select <- dplyr::select
 To get further insight in to output from the linear regression model, these are shown graphically. The function `plot_lm()` models a simple linear regression of a single predictor against a response (entered as strings). 
 
 Two plots are generated. The first shows:
-- Scatterplot of the data coloured by whether the point lies within a prediction interval at a 95% confidence level.
+- Scatterplot of the data coloured by whether the point lies within a prediction interval (PI) at a 95% confidence level.
 - Blue solid linear regression line with a grey shaded area showing a point-wise 95% confidence level, i.e. the regression line should lie within this area at a 95% confidence level.
-- Blue dashed line showing the upper and lower bounds of the regression line at a 95% confidence level. It is analagous to the grey shaded area but is calculated from the whole data set using standard errors of the intercept coefficient, b0, and of the regression coefficient, b1. It illustrates the interpretation of the coefficients b0 and b1 and their associated confidence intervals. In the case of b1, it is the average increase in the response, y, between the upper and lower bounds given a unit increase in the predictor, x.
-- Dotted line shows the upper and lower bounds of the fitted values plus or minus the training mean absolute error (MAE). It represents how far on average each observation is from the regression line along the y-axis. Note that in the three examples given below approximately 60-65% of data points lie within this region.
-- Dot-dash line shows the upper and lower bounds of the prediction interval at a 95% confidence level, i.e. approximately 95% of the training data will lie within this region. When prediction intervals are given for predictions made by the model it is saying that based on the training data, there is a 95% probability the prediction will be between these bounds.
+- Black solid line showing the upper and lower bounds of the regression line at a 95% confidence level (CI). It is analagous to the grey shaded area but is calculated from the whole data set using standard errors of the intercept coefficient, b0, and of the regression coefficient, b1. It illustrates the interpretation of the coefficients b0 and b1 and their associated confidence intervals. In the case of b1, it is the average increase in the response, y, between the upper and lower bounds given a unit increase in the predictor, x.
+- Small dashed line shows the upper and lower bounds of the fitted values plus or minus the training mean absolute error (MAE). It represents how far on average each observation is from the regression line along the y-axis. Note that in the three examples given below approximately 60-65% of data points lie within this region.
+- Dashed line shows the upper and lower bounds of the prediction interval (PI) at a 95% confidence level, i.e. approximately 95% of the training data will lie within this region. When prediction intervals are given for predictions made by the model it is saying that based on the training data, there is a 95% probability the prediction will be between these bounds.
 
 The second plot shows:
 - Scatterplot of residuals coloured by whether the residual lies within the MAE.
@@ -49,45 +49,49 @@ plot_lm <- function(df, response, predictor, show_summary=TRUE){
   # calculate t statistic for 95% confidence interval on coefficients
   qt <- qt(.975, nrow(df) - 2)
 
-  # data frame of model outputs and their applicable upper and lower limits 
-  df <- df %>% mutate(fitted = model$fitted.values,
-                      residuals = summ$residuals,
-                      upper_ci = (b0 + qt * b0_se) + (b1 + qt * b1_se) * df[[predictor]],
-                      lower_ci = (b0 - qt * b0_se) + (b1 - qt * b1_se) * df[[predictor]],
-                      upper_mae = fitted + mean(abs(model$residuals)),
-                      lower_mae = fitted - mean(abs(model$residuals)),
-                      in_MAE = df[[response]] < upper_mae & df[[response]] > lower_mae,
-                      upper_pi = predict(model, df[predictor], interval = "predict")[,"upr"],
-                      lower_pi = predict(model, df[predictor], interval = "predict")[,"lwr"],
-                      in_PI95 = df[[response]] < upper_pi & df[[response]] > lower_pi)
+  # metric upper and lower limits
+  df_upper <- df %>% 
+    mutate(CI = (b0 + qt * b0_se) + (b1 + qt * b1_se) * df[[predictor]],
+           MAE = model$fitted.values + mean(abs(model$residuals)),
+           PI = predict(model, df[predictor], interval = "predict")[,"upr"]) 
   
-  print(paste("fraction within MAE = ", signif(sum(df$in_MAE) / nrow(df), 2)))
-  print(paste("fraction within 95% prediction interval = ", signif(sum(df$in_PI95) / nrow(df), 2)))
+  df_lower <- df %>% 
+    mutate(CI = (b0 - qt * b0_se) + (b1 - qt * b1_se) * df[[predictor]],
+           MAE = model$fitted.values - mean(abs(model$residuals)),
+           PI = predict(model, df[predictor], interval = "predict")[,"lwr"])
   
-  # plot dependent variable vs independent variable plus model outputs
+  df <- df %>% mutate(in_MAE = df[[response]] < df_upper %>% pull(MAE) & df[[response]] > df_lower %>% pull(MAE),
+                      in_PI = df[[response]] < df_upper %>% pull(PI) & df[[response]] > df_lower %>% pull(PI))
+  
+  df_upper <- df_upper %>% gather("metric", "value", c("CI", "MAE", "PI"))
+  df_lower <- df_lower %>% gather("metric", "value", c("CI", "MAE", "PI"))
+  
+  # fitted model plot
   plot <- ggplot(df, aes(df[[predictor]], df[[response]])) +
-    geom_point(aes(col = in_PI95)) +
+    geom_point(aes(col = in_PI)) +
     geom_smooth(method = "lm") +
-    geom_line(aes(df[[predictor]], upper_ci), linetype = 2, col = "blue") + # dashed lines are 95% CI on betas
-    geom_line(aes(df[[predictor]], lower_ci), linetype = 2, col = "blue") +
-    geom_line(aes(df[[predictor]], upper_mae), linetype = 3) + # dotted lines are MAE
-    geom_line(aes(df[[predictor]], lower_mae), linetype = 3) +
-    geom_line(aes(df[[predictor]], upper_pi), linetype = 4) + # dot dash lines are 95% PI (prediction interval)
-    geom_line(aes(df[[predictor]], lower_pi), linetype = 4) +
+    geom_line(data = df_upper, aes(df_upper[[predictor]], value, linetype = metric)) +
+    geom_line(data = df_lower, aes(df_lower[[predictor]], value, linetype = metric)) +
     labs(x = colnames(df[predictor]), y = colnames(df[response]))
+
+  # residual plot  
+  df_resid_upper <- df %>% 
+    mutate(residual_mean = mean(model$residuals), 
+           MAE = mean(abs(model$residuals))) %>% 
+    gather("metric", "value", residual_mean:MAE)
   
-  # residual plot
-  res_plot <- ggplot(df, aes(df[[predictor]], residuals)) +
+  df_resid_lower <- df %>% mutate(metric = "MAE", value = -mean(abs(model$residuals)))
+  
+  res_plot <- ggplot(df, aes(df[[predictor]], model$residuals)) +
     geom_point(aes(col = in_MAE)) +
-    geom_hline(aes(yintercept = mean(residuals)), linetype = 2) + # dashed line is mean of residuals
-    geom_hline(aes(yintercept = mean(abs(model$residuals))), linetype = 3) + # dotted lines are MAE
-    geom_hline(aes(yintercept = -mean(abs(model$residuals))), linetype = 3) +
+    geom_hline(data = df_resid_upper, aes(yintercept = value, linetype = metric)) +
+    geom_hline(data = df_resid_lower, aes(yintercept = value, linetype = metric)) +
     labs(x = colnames(df[predictor]))
   
   if(show_summary==TRUE){
-    list(plot, res_plot, summ)
+    list(res_plot, plot, summ)
   } else {
-    list(plot, res_plot)
+    list(res_plot, plot)
   }
 }
 ```
