@@ -1,6 +1,6 @@
 ## Dave Porter Data Science Portfolio
 
-Welcome! Here you will find examples of my data processing, data analysis and machine learning skills in R and Python.
+Welcome! Here you will find examples of my data processing, data analysis, machine learning and dashboarding skills in R and Python.
 
 ### File Contents
 
@@ -14,15 +14,22 @@ Welcome! Here you will find examples of my data processing, data analysis and ma
 *ML theory analysis:* [classification_model_helpers.R](classification_model_helpers.R)  |R  |Functions to compare accuracy of logistic regression, LDA, QDA and knn, functions to create detailed confusion matrix and optimise knn k.  |Confusion matrix, creating complex functions.
 ISLR_ex_*chapter number and description* |R |Exercises from [*Introduction to Statistical Learning with Applications in R*](http://faculty.marshall.usc.edu/gareth-james/ISL/) (ISLR). |Machine learning theory.
 
+### Dashboards
+
+Sales and product dashboard for Royal RepubliQ fashion retailer in Amsterdam. Data has been anonymised.
+http://rrdd.herokuapp.com/
+
+Covid 19 tracking dashboard.
+http://worldcovid19dashboard.herokuapp.com/
+
 ### Coding Skill Highlights
 
-R: 
-- dplyr: including advanced functions e.g. mutate_at, mutate_if
-- tidyr & purrr: group, nest, mutate then map function e.g. apply regression to grouped data and extract metrics and predictions
-- ggplot: high quality figures
-- complex multipurpose function creation e.g. `test_relationship()` in [`linear_regression.Rmd`](linear_regression.Rmd)
-
-Python: 
-- packages: numpy, pandas, seaborn, scipy, scikit-learn, statsmodels
+Python:
+- packages: numpy, pandas, scipy, scikit-learn, statsmodels, seaborn, plotly and dash
 - lambda functions and list comprehensions
 - bespoke nesting/unnesting
+
+R:
+- dplyr, tidyr & purrr: group, nest, mutate then map function e.g. apply regression to grouped data and extract metrics and predictions
+- ggplot: high quality figures
+- complex multipurpose function creation e.g. `test_relationship()` in [`linear_regression.Rmd`](linear_regression.Rmd)
