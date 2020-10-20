@@ -5,7 +5,10 @@ To better understand how the k nearest neighbours algorthimn works, I've built i
 My function is set up to work with two predictors, `p1` and `p2`, each having two classes, `A` and `B`, randomly generated from normal distributions.
 
 ```{r}
-library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
 library(class)
 ```
 
