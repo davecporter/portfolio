@@ -9,7 +9,8 @@ Second, graphical representations of logistic regression for a single predictor 
 Equations and figures referenced here are found in *Introduction to Statistical Learning with Application in R* (ISLR).
 
 ```{r, message=FALSE, warning=FALSE}
-library(tidyverse)
+library(dplyr)
+library(ggplot2)
 library(ISLR)
 ```
 
