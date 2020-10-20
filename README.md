@@ -6,7 +6,7 @@ Welcome! Here you will find examples of my data processing, data analysis, machi
 
 |File Name |Language |Description  |Exemplifies
 |-----     |-----    |-----        |-----
-[Effect of Game Theoretical Margin ](Effect_of_Game_Theoretical_Margin_on_Game_Success.ipynb) [on Game Success](Effect_of_Game_Theoretical_Margin_on_Game_Success.ipynb) |Python |Analysis of online slot games. Consultantcy project for 4theplayer.com. |Data processing including nesting/unnesting, statistical analysis, linear regression, seaborn.
+[Effect of Game Theoretical Margin on Game Success](Effect_of_Game_Theoretical_Margin_on_Game_Success.ipynb) |Python |Analysis of online slot games. Consultantcy project for 4theplayer.com. |Data processing including nesting/unnesting, statistical analysis, linear regression, seaborn.
 *ML theory analysis:* [linear regression](https://rpubs.com/davecporter/linear_regression) |R |Plotting model outputs (e.g. MAE, prediction interval), function to find linear and non-linear relationships, function to find interaction terms, is it best to model as continuous or ordered categorical? |Linear regression theory, creating complex functions, ggplot.
 *ML theory analysis:* [logistic regression](https://rpubs.com/davecporter/logistic_regression) |R  |Analysis of the logistic function with plots showing decision boundary and probability areas. |Logistic regression theory, creating complex functions, ggplot.
 *ML theory analysis:* [knn.Rmd](knn.Rmd) |R  |Constructing knn algorithm from scratch, optimising k. |k nearest neighbours theory, R data type manipulation.
@@ -16,7 +16,7 @@ ISLR_ex_*chapter number and description* |R |Exercises from [*Introduction to St
 
 ### Dashboards
 
-Sales and product dashboard for Royal RepubliQ fashion retailer in Amsterdam. Data has been anonymised.
+Sales and product dashboard for Royal RepubliQ fashion retailer. Data has been anonymised.
 
 http://rrdd.herokuapp.com/
 
