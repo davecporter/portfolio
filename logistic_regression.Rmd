@@ -8,7 +8,7 @@ Second, graphical representations of logistic regression for a single predictor 
 
 Equations and figures referenced here are found in *Introduction to Statistical Learning with Application in R* (ISLR).
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(ISLR)
 ```
@@ -23,14 +23,14 @@ odds = p(X) / (1 - p(X)) ie probability of it happening / probability of it not 
 p(X) = odds / (1 + odds)
 
 The chart below shows the relationship between odds and probability.
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # odds vs probability
 plotr <- data.frame(p_X = seq(0,0.99,0.01)) %>% mutate(odds = p_X / (1 - p_X)) 
 ggplot(plotr, aes(p_X, odds)) + geom_line()
 ```
 
 The logistic function is responsible for calculating probabilities for classifying the response. The figure below shows the probability of defaulting on a loan given a person's bank balance (from ISLR::Default).
-```{r}
+```{r, message=FALSE, warning=FALSE}
 summary(glm(default ~ balance, family = binomial, data=Default))
 b0 <- -10.65
 b1 <- 5.5e-3
@@ -45,12 +45,12 @@ ggplot(plotr, aes(balance, P_default)) + geom_line() # (equivalent to fig 4.2)
 ```
 
 The odds are multiplied by:
-```{r}
+```{r, message=FALSE, warning=FALSE}
 exp(b1) # (eq 4.3)
 ```
 
 If the odds are 4, or 4/1, the probability is P(X) = 4/(1+4) = 0.8. An increase in X, `balance`, of 1 gives increase in odds of:
-```{r}
+```{r, message=FALSE, warning=FALSE}
 odds <- 4
 new_odds <- odds * exp(b1)
 delta_odds <- new_odds - odds
@@ -58,12 +58,12 @@ delta_odds
 ```
 
 Which corresponds to an increase in probability p(X) of p(X) = odds / (1 + odds):
-```{r}
+```{r, message=FALSE, warning=FALSE}
 (new_odds / (1 + new_odds)) - (odds / (1 + odds))
 ```
 
 Checking this against the logistic function yields the same result (first find X for odds of 4).
-```{r}
+```{r, message=FALSE, warning=FALSE}
 X_at_odds <- (log(odds) - b0) / b1
 X_at_odds
 logistic_function(b0, b1, X_at_odds + 1) - logistic_function(b0, b1, X_at_odds) 
@@ -88,7 +88,7 @@ red and blue shaded areas,  probability area of data points for class `A` and `B
 black solid line            logistic function decision boundary
 lower rug plot              data points
 upper rug plot              predictions, red = `A`, blue = `B`
-```{r}
+```{r, message=FALSE, warning=FALSE}
 logistic_regression <- function(nA, meanA=0, sdA=1, nB, meanB=0, sdB=1, 
                                 p_cutoff=0.5, seed=round(runif(1)*1e6), show_conf_matrix=TRUE){
   set.seed(seed)
@@ -144,20 +144,20 @@ A few comments on how logistic regression performs on asingle predictor with two
 1. Comparing two normal distributions of equal observation size, `A` has a mean of 0, `B` has a mean of 1. The logistic function decison boundary (black line) closely follows the actual probability areas of the two distributions (shown by the shaded areas bound by dotted lines). Accuracy, precision, true positive `A` rate and true negative `B` rate are all very similar due to similar true positive and true negative counts as well as similar false positive (type I error) and false negative counts (type II error).
 
 Note any bulges in the shaded probability areas, particularly at low and high X, indicate a disproportionate number of a certain class which can be seen due to the low number of observations at these points.
-```{r}
+```{r, message=FALSE, warning=FALSE}
 logistic_regression(nA=10000, nB=10000, meanB=1)
 ```
 
 2. Number of observations are now unequal with `B` having a standard deviation of 0.5 so the majority of it's observations, X, are contained within the range of `A`. There is no region of X which solely contains `B` which can be seen by the blue probability area not reaching p(X) = 1, the top of the y-axis. Compared to 1. above, this leads to higher accuracy, precision and true `A` rate at the expense of true `B`rate.
 
 The logistic function decision boundary (black line) does not closely match the probability area boundary (dashed line) as it does it's best to correctly classify predictions given at no point do the data show a 100% probability of `B`. Reducing the classification probability cut-off to 0.4 helps account for the way the two distributions overlap. This increases the true `B` rate at the expense of the true `A` rate but increases the overall accuracy and precision of the model.
-```{r}
+```{r, message=FALSE, warning=FALSE}
 logistic_regression(nA=5000, nB=3000, meanB=1, sdB=0.5, seed = 687435)
 logistic_regression(nA=5000, nB=3000, meanB=1, sdB=0.5, seed = 687435, p_cutoff = 0.4)
 ```
 
 3. The difference in number of observations are increased even more and the distributions separated further by setting the mean of `B` to 3. Standard deviations are both 1. Due to the high separation of the distributions, the black logistic function curve matches the dashed probability area line well and prediction metrics are all high. Changing the probability cut-off to a low 0.2 again helps equalise the true `A` and true `B` rate, this time at the slight expense of accuracy. 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 logistic_regression(nA=5000, nB=1000, meanB=3, sdB=1, seed = 67312)
 logistic_regression(nA=5000, nB=1000, meanB=3, sdB=1, seed = 67312, p_cutoff = 0.2)
 ```

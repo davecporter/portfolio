@@ -18,7 +18,7 @@ Data sets used:
 - mlbench::Sonar
 - mlbench::PimaIndiansDiabetes2
 
-```{r}
+```{r, message=FALSE}
 library(tidyverse)
 library(MASS)
 select <- dplyr::select
@@ -44,12 +44,12 @@ auto_preds <- Auto %>%
 ```
 
 All predictors are used to classify `mpg01` (except `mpg` and `name`). At around `n_trials` of 500, the glm (logistic regression), lda and qda methods display similar accuracy distributions which is to be expected given they classify by probabilities. Knn appears to give a slightly better accuracy.
-```{r, message=FALSE}
+```{r, message=FALSE, warning=FALSE}
 compare_class_method(auto_preds, "mpg01", ".", n_trials=500, k=k_test)
 ```
 
 Comparing my CV approach with leave one out cross validation (LOOCV) and k-fold CV for `Auto` data set regressing `mpg01` on `cylinders` only.
-```{r, message=FALSE}
+```{r, message=FALSE, warning=FALSE}
 compare_class_method(auto_preds, "mpg01", "cylinders", n_trials=200, k=k_test)
 ```
 
@@ -66,24 +66,24 @@ compare_class_method(auto_preds, "mpg01", "cylinders", n_trials=200, k=k_test)
 **ISLR::Weekly**
 
 The `Weekly` data set consists of: "Weekly percentage returns for the S&P 500 stock index between 1990 and 2010" with `Direction` of `Up` or `Down` indicating whether the market had a positive or negative return on a given week based off the percentage return 2 weeks previous (`Lag2`). 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 compare_class_method(Weekly, "Direction", "Lag2", n_trials=100, k=k_test)
 # null error rate
 Weekly %>% mutate(Up = "Up", Compare = Direction == Up) %>% summarise(n(),mean(Compare))
 ```
 
 glm, lda and qda perform no better than the null error rate since the probability distributions overlap as shown below.
-```{r}
+```{r, message=FALSE, warning=FALSE}
 ggplot(Weekly, aes(Lag2, fill=Direction)) + geom_density(position="dodge", alpha=0.5)
 ```
 
 knn performs much better since groups of `Direction` are present as illustrated by the jitter plot below. Test points are more easily classified by their proximity to similar neighbours.
-```{r}
+```{r, message=FALSE, warning=FALSE}
 ggplot(Weekly, aes(x=0, Lag2, col=Direction)) + geom_jitter()
 ```
 
 **MASS::Boston**
-```{r, message=FALSE}
+```{r, message=FALSE, warning=FALSE}
 # Boston_df <- Boston %>% mutate(chas=as.factor(chas), rad=as.factor(rad))
 # compare_class_method(Boston_df, "chas", "indus", n_trials=100, k=k_test)
 ```
@@ -91,36 +91,36 @@ ggplot(Weekly, aes(x=0, Lag2, col=Direction)) + geom_jitter()
 **mlbench::Sonar**
 
 `Class` in the `Sonar` data set records whether an object is classified as metal or rock given 60 numerical (0 to 1) sonar readings of different energy bands.
-```{r}
+```{r, message=FALSE, warning=FALSE}
 data("Sonar")
 colnames(Sonar)
 ```
 
 knn performs better than glm or lda (some groups are too small for qda). 
-```{r, message=FALSE}
+```{r, message=FALSE, warning=FALSE}
 compare_class_method(Sonar, "Class",  methods=c("glm", "lda", "knn"), n_trials = 100)
 ```
 
 The pairplot below illustrates why knn performs better for 2 predictors chosen as an example. The density plots on the diagonal show the overlap between the predictors, whilst it can be seen on the scatter plot that groups of metal and rocks are distinguishable.
-```{r}
+```{r, message=FALSE, warning=FALSE}
 ggpairs(Sonar, aes(col=Class, alpha=0.5), columns = c("V4", "V37"))
 ```
 
 **mlbench::PimaIndiansDiabetes2**
 
 This data set classifies whether a person has `diabetes` using various measures such as `age` and body mass index (bmi) coded as `mass`.
-```{r, message=FALSE}
+```{r, message=FALSE, warning=FALSE}
 data("PimaIndiansDiabetes2")
 compare_class_method(PimaIndiansDiabetes2 %>% na.omit(), "diabetes", k=k_test, n_trials = 200)
 ```
 
 On this data set, glm, lda and qda perform slightly better than knn. This is likely due to the influence of `glucose` as shown below which enables a decent prediction. The higher the plasma glucose concentration, the more likely a patient will test `positive`.
-```{r, message=FALSE}
+```{r, message=FALSE, warning=FALSE}
 ggpairs(PimaIndiansDiabetes2 %>% na.omit(), aes(col=diabetes, alpha=0.5))
 ```
 
 The summary for the glm (logistic regression) method indeed shows that `glucose` is the most significant predictor.
-```{r}
+```{r, message=FALSE, warning=FALSE}
 summary(glm(diabetes ~ ., family = "binomial", PimaIndiansDiabetes2))
 ```
 

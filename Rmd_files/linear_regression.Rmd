@@ -10,7 +10,7 @@ To better understand some aspects of univariate and multivariate linear regressi
 
 **Finding Interaction Terms:** Function that fits each predictor in a data frame with each other as interaction terms and outputs p values for comparison.
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(ISLR)
 library(MASS)
@@ -33,7 +33,7 @@ The second plot shows:
 - Dotted line shows the MAE.
 
 The fraction of training data within the MAE and prediction interval is also given.
-```{r}
+```{r, message=FALSE, warning=FALSE}
 plot_lm <- function(df, response, predictor, show_summary=TRUE){
   
   # fit regression model
@@ -101,12 +101,12 @@ plot_lm <- function(df, response, predictor, show_summary=TRUE){
 These examples only consider one predictor in the intepretation of the model outputs. Other predictors will likely effect the response.
 
 ISLR::Auto, `horsepower` of a car vs its engine size `displacement` in cubic inches.
-```{r}
+```{r, message=FALSE, warning=FALSE}
 plot_lm(Auto, "horsepower", "displacement")
 ```
 
 A 300 cubic inch car is predicted to have a 139 horsepower engine on average plus or minus an average error of 12.5 hp. There is a 95% probability it will have a horsepower of between 106 and 173. For an increase in 100 cubic inches, the average horsepower will increase by between 31 and 35. 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # fit regression model
 auto_model <- lm(horsepower ~ displacement, Auto)
 auto_summ <- summary(auto_model)
@@ -119,35 +119,35 @@ b1_se <- auto_summ$coefficients[2,2]
 b0 + b1 * 300
 ```
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # MAE
 mean(abs(auto_model$residuals))
 ```
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # prediction interval
 predict(auto_model, data.frame(displacement=300), interval = "predict")
 ```
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # calculate t statistic for 95% confidence interval on coefficients
 qt <- qt(.975, nrow(Auto) - 2)
 ```
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # unit increase in predictor gives increase in response
 b1 - qt * b1_se
 b1 + qt * b1_se
 ```
 
 ISLR::Carseats, `Sales` of child car seats at a store vs the local advertising budget at that store (both in thousands of dollars).
-```{r}
+```{r, message=FALSE, warning=FALSE}
 plot_lm(Carseats, "Sales", "Advertising")
 # Carseats %>% filter(Advertising == 0) %>% summarise(mean(Sales))
 ```
 
 MASS::Boston, average number of rooms per dwelling `rm` in an area of Boston vs median value of owner-occupied homes `medv` (in thousands of dollars) for that area.
-```{r}
+```{r, message=FALSE, warning=FALSE}
 plot_lm(Boston, "rm", "medv")
 ```
 
@@ -156,7 +156,7 @@ plot_lm(Boston, "rm", "medv")
 Are some variables better off being considered as continuous or categorical? In the `Auto` data set `cylinders` could be considered as ordered categorical variables as it is not possible to have fractions of a cylinder.
 
 In this example they seem better off as factors as the RSE is lower and R squared is higher. 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # linear model with cylinders as continuous
 summary(lm(mpg ~ cylinders, Auto))
 
@@ -167,7 +167,7 @@ lm_fact_cyl
 ```
 
 The chart below shows why converting `cylinders` to ordered categorical performs better. The blue line is the regression using numerical continuous values and the red line shows regression using ordered categorical. It can be seen that the red line is able to better capture the mean `mpg` for each number of `cylinders`.
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # create data frame of regression coefficients
 plotr <- lm_fact_cyl$coefficients %>% 
   as.data.frame() %>% rownames_to_column("fact_cyl") 
@@ -194,7 +194,7 @@ sqrt            boolean for square root transformation of the predictor, default
 log             "10" for base 10 and "natural" for log transformation of the predictor, defaults to false
 signif_level    significance level to assess coefficients, defaults to 0.05
 show_intercept  boolean to show output for the intercept
-```{r}
+```{r, message=FALSE, warning=FALSE}
 test_relationship <- function(df, response, n_poly=1, sqrt=FALSE, log=FALSE, 
                               signif_level=0.05, show_intercept=TRUE){
   
@@ -243,31 +243,31 @@ test_relationship <- function(df, response, n_poly=1, sqrt=FALSE, log=FALSE,
 ```
 
 Exercise 15 from chapter 3 of *Introduction to Statistical Learning with Applications in R* (ISLR) illustrates the use of `test_relationship()`. This involves prediction of per capita crime rate `crim` using the `Boston` data set.
-```{r}
+```{r, message=FALSE, warning=FALSE}
 Boston_df <- Boston %>% 
   mutate(chas = as.factor(chas),
          rad = as.factor(rad))
 ```
 
 Fit simple linear models for each predictor. 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 single_pred <- test_relationship(Boston_df, "crim", show_intercept = FALSE)
 single_pred
 ```
 
 These predictors are statistically significant (i.e. all except `chas`):
-```{r}
+```{r, message=FALSE, warning=FALSE}
 single_pred %>% filter(signif == TRUE) %>% pull(predictor)
 ```
 
 Fitting the full model gives `zn`, `nox`, `dis`, `rad` and `medv` as significant.
-```{r}
+```{r, message=FALSE, warning=FALSE}
 all_pred_summ <- summary(lm(crim ~ ., Boston_df))
 all_pred_summ
 ```
 
 Plot the multivariate coefficients against the univariate coefficients. The dashed line shows where the coefficients are equal. Most coefficients are similar, except `nox`.
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # attach category numbers to predictor strings
 uni_pred <- single_pred %>% 
   mutate(predictor = paste(predictor, str_replace(coef, "df\\[\\[x\\]\\]", ""), sep = "")) %>% 
@@ -285,13 +285,13 @@ ggplot(coeffs, aes(univariate_coefficient, multivariate_coefficient)) + geom_poi
 ```
 
 Check if there is any third order polynomial relationships. 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 poly_pred <- test_relationship(Boston_df, "crim", n_poly = 3, show_intercept = FALSE)
 poly_pred
 ```
 
 The predictors below have significance for all polynomial orders. The R squared values also increase, though only from poor correlations to slightly less poor!
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # find predictors with all 3 polynomial orders being significant
 poly_signif <- poly_pred %>% 
   group_by(predictor) %>% summarise(sum_signif = sum(signif)) %>% filter(sum_signif == 3) %>% pull(predictor)
@@ -306,7 +306,7 @@ inner_join(single_pred, poly_pred, by = c("predictor", "coef"), suffix = c(".sin
 One potential approach to finding interaction terms is to fit a series of models with two predictors each in the form of y ~ x1 + x2 + x1:x2 for every combination of predictor. 
 
 The function `find_interactions()` does this given a single response (entered as a string) at a set significance level. It outputs two tables with the first giving the p value for the coefficients of the intercept, x1, x2 and x1:x2 for each pair of predictors and the second table translates these p values in to a boolean of statistical significance.
-```{r}
+```{r, message=FALSE, warning=FALSE}
 find_interactions <- function(df, response, signif_level=0.05){
   vars <- colnames(df)[colnames(df) != response] # remove response variable
   combos <- expand.grid(vars, vars) %>% filter(Var1 != Var2) # remove same predictors
@@ -332,7 +332,7 @@ find_interactions <- function(df, response, signif_level=0.05){
 ```
 
 Interactions for the `Auto` dataset. Most pairs of predictors provide statistically significant relationships! 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 find_interactions(Auto %>% select(-name), "mpg")
 ```
 
@@ -341,7 +341,7 @@ The hierachical principle states if theres an interaction effect, leave in the m
 However, we can't just look at each y ~ x1 + x2 + x1:x2 for significance using `find_interactions()`. For example, in the Auto dataset cylinders:displacement and displacement:weight are both statistically significant on their own but combined in the same model `lm(formula = mpg ~ cylinders * displacement + displacement * weight, data = Auto)` only displacement:weight is significant.
 
 Comparing the RSE and adjusted R squared for each interaction could yield a better analysis.
-```{r}
+```{r, message=FALSE, warning=FALSE}
 summary(lm(formula = mpg ~ cylinders * displacement + displacement * weight, data = Auto))
 ```
 
