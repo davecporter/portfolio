@@ -26,12 +26,8 @@ http://worldcovid19dashboard.herokuapp.com/
 
 ### Coding Skill Highlights
 
-Python:
-- packages: numpy, pandas, scipy, scikit-learn, statsmodels, seaborn, plotly and dash
-- lambda functions and list comprehensions
-- bespoke nesting/unnesting
+Python packages including: scipy, scikit-learn, statsmodels, seaborn, plotly and dash
 
-R:
-- dplyr, tidyr & purrr: group, nest, mutate then map function e.g. apply regression to grouped data and extract metrics and predictions
-- ggplot: high quality figures
-- complex multipurpose function creation e.g. `test_relationship()` in [`linear_regression.Rmd`](linear_regression.Rmd)
+R examples:
+- Group, nest, mutate then map function e.g. apply regression to grouped data and extract metrics and predictions
+- Example complex multipurpose function creation: `test_relationship()` in [`linear_regression.Rmd`](linear_regression.Rmd)
