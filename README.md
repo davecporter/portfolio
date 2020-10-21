@@ -16,7 +16,7 @@ ISLR_ex_*chapter number and description* |R |Exercises from [*Introduction to St
 
 ### Dashboards
 
-Sales and product dashboard for Royal RepubliQ fashion retailer. Data has been anonymised.
+Sales and product dashboard for a fashion retailer. Data has been anonymised.
 
 http://rrdd.herokuapp.com/
 
