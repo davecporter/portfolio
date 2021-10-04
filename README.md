@@ -12,9 +12,11 @@ Welcome! Here you will find examples of my data processing, data analysis, machi
 *ML theory analysis:* [knn.Rmd](knn.Rmd) |R  |Constructing knn algorithm from scratch, optimising k. |k nearest neighbours theory, R data type manipulation.
 *ML theory analysis:* [classification model comparisons. ](https://rpubs.com/davecporter/classification_model_comparisons)  |R  |Comparing logistic regression, LDA, QDA and knn for various data sets.  |Analysis of classification theory.
 *ML theory analysis:* [classification_model_helpers.R](classification_model_helpers.R)  |R  |Functions to compare accuracy of logistic regression, LDA, QDA and knn, functions to create detailed confusion matrix and optimise knn k.  |Confusion matrix, creating complex functions.
-ISLR_ex_*chapter number and description* |R |Exercises from [*Introduction to Statistical Learning with Applications in R*](http://faculty.marshall.usc.edu/gareth-james/ISL/) (ISLR). |Machine learning theory.
+ISLR_ex_*chapter number and description* |R |Exercises from [*Introduction to Statistical Learning with Applications in R*](https://www.statlearning.com/) (ISLR). |Machine learning theory.
 
 ### Dashboards
+
+*If you would like to view these dashboards but are experiencing problems, please let me know.*
 
 Sales and product dashboard for a fashion retailer. Data has been anonymised.
 
@@ -23,11 +25,3 @@ http://rrdd.herokuapp.com/
 Covid 19 tracking dashboard.
 
 http://worldcovid19dashboard.herokuapp.com/
-
-### Coding Skill Highlights
-
-Python packages including: scipy, scikit-learn, statsmodels, seaborn, plotly and dash
-
-R examples:
-- Group, nest, mutate then map function e.g. apply regression to grouped data and extract metrics and predictions
-- Example complex multipurpose function creation: `test_relationship()` in [`linear_regression.Rmd`](linear_regression.Rmd)
